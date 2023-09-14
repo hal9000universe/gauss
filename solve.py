@@ -59,6 +59,7 @@ def gaussian_elimination(system: Tensor) -> Tensor:
     Returns:
         Tensor: system of equations in reduced row echelon form
     """
+    # TODO: implement Gaussian elimination
     pass
 
 
