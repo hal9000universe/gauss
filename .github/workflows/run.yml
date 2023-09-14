@@ -16,4 +16,4 @@ jobs:
               with:
                 python-version: '3.10' 
             - run: pip install -r requirements.txt
-            - run: python solve.py
+            - run: python src/main.py

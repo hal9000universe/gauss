@@ -1,66 +1,48 @@
+from typing import List, NamedTuple, Tuple
 from torch import Tensor
-from typing import NamedTuple, List
+from copy import copy
 
 
-# elementary row operations
-def swap_rows(system: Tensor, i: int, j: int) -> Tensor:
-    """Swaps rows i and j of the system of equations.
-    
-    Args:
-        system (Tensor): system of equations
-        i (int): row index
-        j (int): row index
+class Quotient:
+    """Represents a quotient."""
+    _value: float
+    _numerator: float
+    _denominator: float
+
+    def __init__(self, numerator: float, denominator: float):
+        """Initializes the quotient with the numerator and the denominator.
         
-    Returns:
-        Tensor: system of equations with swapped rows
-    """
-    system[[i, j]] = system[[j, i]]
-    return system
+        Args:
+            numerator (float): numerator
+            denominator (float): denominator
+        """
+        self._value = numerator / denominator
+        self._numerator = numerator
+        self._denominator = denominator
 
+    def value(self) -> float:
+        """Returns the value.
 
-def multiply_row(system: Tensor, i: int, k: float) -> Tensor:
-    """Multiplies row i of the system of equations by k.
-    
-    Args:
-        system (Tensor): system of equations
-        i (int): row index
-        k (float): scalar
+        Returns:
+            float: value
+        """
+        return self._value
+
+    def numerator_denominator(self) -> Tuple[float, 2]:
+        """Returns the numerator and the denominator.
         
-    Returns:
-        Tensor: system of equations with row i multiplied by k
-    """
-    system[i] *= k
-    return system
+        Returns:
+            Tuple[float, 2]: numerator and denominator
+        """
+        return (self._numerator, self._denominator)
 
-
-def reduce_rows(system: Tensor, reduced_row_idx: int, other_row_idx: int, k: float) -> Tensor:
-    """Adds k times row j to row i of the system of equations.
-    
-    Args:
-        system (Tensor): system of equations
-        reduced_row_idx (int): row index of row to be reduced
-        other_row_idx (int): row index of row to be added
-        k (float): scalar
+    def __repr__(self):
+        """Returns a string representation of the quotient.
         
-    Returns:
-        Tensor: system of equations with row i added by k times row j
-    """
-    system[reduced_row_idx] += k * system[other_row_idx]
-    return system
-
-
-def gaussian_elimination(system: Tensor) -> Tensor:
-    """Transforms the system of equations to reduced row echelon form 
-    by employing elementary row operations.
-    
-    Args:
-        system (Tensor): system of equations
-        
-    Returns:
-        Tensor: system of equations in reduced row echelon form
-    """
-    # TODO: implement Gaussian elimination
-    pass
+        Returns:
+            str: string representation of the quotient
+        """
+        return f"/div({self._numerator},{self._denominator})"
 
 
 class Operation:
@@ -104,14 +86,14 @@ class SwapRows(Operation):
 class MultiplyRow(Operation):
     """Represents the operation of multiplying a row of a system of equations by a scalar."""
     _i: int
-    _k: float
+    _k: Quotient
 
-    def __init__(self, i: int, k: float):
+    def __init__(self, i: int, k: Quotient):
         """Initializes the operation with the row index of the row to be multiplied and the scalar.
         
         Args:
             i (int): row index
-            k (float): scalar
+            k (Quotient): scalar
         """
         super().__init__("/multiply_row")
         self._i = i
@@ -130,15 +112,15 @@ class ReduceRows(Operation):
     """Represents the operation of adding a multiple of one row to another row of a system of equations."""
     _i: int
     _j: int
-    _k: float
+    _k: Quotient
 
-    def __init__(self, i: int, j: int, k: float):
+    def __init__(self, i: int, j: int, k: Quotient):
         """Initializes the operation with the row indices of the rows to be added and the scalar.
         
         Args:
             i (int): row index
             j (int): row index
-            k (float): scalar
+            k (Value): scalar
         """
         super().__init__("/reduce_rows")
         self._i = i
@@ -235,43 +217,3 @@ def repr_record(record: Record, names: List[str]) -> str:
     for system_op_pair in record.system_op_pairs():
         repr_record += f"{repr_system_op_pair(system_op_pair, names)}\n\n"
     return repr_record
-
-
-if __name__ == "__main__":
-    system = Tensor([
-        [1, 2, 3],
-        [2, 1, 3],
-    ])
-    names = ["x", "y"]
-    print(repr_system(system, names))
-
-    swap_rows(system, 0, 1)
-    print(repr_system(system, names))
-    swap_operation = SwapRows(0, 1)
-    print(swap_operation)
-    system_op_pair = SystemOperationPair(system, swap_operation)
-    print(repr_system_op_pair(system_op_pair, names))
-
-    print("hello world")
-
-    multiply_row(system, 0, 2)
-    print(repr_system(system, names))
-    multiply_operation = MultiplyRow(0, 2)
-    print(multiply_operation)
-    system_op_pair = SystemOperationPair(system, multiply_operation)
-    print(repr_system_op_pair(system_op_pair, names))
-
-    reduce_rows(system, 1, 0, -2)
-    print(repr_system(system, names))
-    reduce_operation = ReduceRows(1, 0, -2)
-    print(reduce_operation)
-    system_op_pair = SystemOperationPair(system, reduce_operation)
-    print(repr_system_op_pair(system_op_pair, names))
-
-    print("start")
-
-    record = Record()
-    record.add(system, swap_operation)
-    record.add(system, multiply_operation)
-    record.add(system, reduce_operation)
-    print(repr_record(record, names))
