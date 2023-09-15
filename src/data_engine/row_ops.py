@@ -185,9 +185,9 @@ def repr_system(system: Tensor, names: List[str]) -> str:
     for i in range(num_equations):
         for j in range(num_variables):
             if j < num_variables - 1:
-                repr_system += f"{system[i, j]}{names[j]} + "
+                repr_system += f"{system[i, j]}*{names[j]} + "
             else:
-                repr_system += f"{system[i, j]}{names[j]} "
+                repr_system += f"{system[i, j]}*{names[j]} "
         repr_system += f"= {system[i, num_variables]}\n"
     return repr_system
 

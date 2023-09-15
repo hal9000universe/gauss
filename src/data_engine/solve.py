@@ -2,7 +2,7 @@ from torch import Tensor
 from typing import Tuple
 from copy import copy
 
-from src.data.row_ops import Operation, SwapRows, MultiplyRow, ReduceRows, Record, repr_record, repr_system, Quotient
+from src.data_engine.row_ops import Operation, SwapRows, MultiplyRow, ReduceRows, Record, repr_record, repr_system, Quotient
 
 
 # elementary row operations
@@ -69,10 +69,6 @@ def gaussian_elimination(system: Tensor) -> Tuple[Tensor, Record]:
 
     # forward elimination
     for k in range(0, num_variables):
-
-        for sys_op_pairs in record.system_op_pairs():
-            if isinstance(sys_op_pairs.operation, MultiplyRow):
-                print(sys_op_pairs.operation)
 
         # initialize maximum value and index for pivot
         max_value: float = system[k, k]
