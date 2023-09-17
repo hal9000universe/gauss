@@ -1,3 +1,5 @@
 torch
+torchdata
+torchtext
 numpy
 tokenizers

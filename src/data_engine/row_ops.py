@@ -188,8 +188,8 @@ def repr_system(system: Tensor, names: List[str]) -> str:
                 repr_system += f"{system[i, j]}*{names[j]} + "
             else:
                 repr_system += f"{system[i, j]}*{names[j]} "
-        repr_system += f"= {system[i, num_variables]}\n"
-    return repr_system
+        repr_system += f"= {system[i, num_variables]} /n"
+    return repr_system[:-3]
 
 
 def repr_system_op_pair(system_op_pair: SystemOperationPair, names: List[str]) -> str:
@@ -201,7 +201,7 @@ def repr_system_op_pair(system_op_pair: SystemOperationPair, names: List[str]) -
     Returns:
         str: string representation of the system of equations and the corresponding operation
     """
-    return f"{repr_system(system_op_pair.system, names)}{system_op_pair.operation}"
+    return f"{repr_system(system_op_pair.system, names)}?{system_op_pair.operation} \n"
 
 
 def repr_record(record: Record, names: List[str]) -> str:
@@ -215,5 +215,5 @@ def repr_record(record: Record, names: List[str]) -> str:
     """
     repr_record: str = ""
     for system_op_pair in record.system_op_pairs():
-        repr_record += f"{repr_system_op_pair(system_op_pair, names)}\n\n"
+        repr_record += f"{repr_system_op_pair(system_op_pair, names)}"
     return repr_record

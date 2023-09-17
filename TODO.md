@@ -1,7 +1,12 @@
 ### TODO
 
+# data
 - [x] gaussian elimination
 - [x] tokenizer
-- [ ] dataset with (x, y) pairs
-- [ ] embedding
-- [ ] data pipe
+- [x] dataset with (x, y) pairs
+- [x] embedding
+- [x] data pipe
+
+# deep learning
+- [ ] transformer
+- [ ] training loop

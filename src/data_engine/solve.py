@@ -1,4 +1,4 @@
-from torch import Tensor
+from torch import Tensor, no_grad
 from typing import Tuple
 from copy import copy
 
@@ -6,37 +6,29 @@ from src.data_engine.row_ops import Operation, SwapRows, MultiplyRow, ReduceRows
 
 
 # elementary row operations
-def swap_rows(system: Tensor, i: int, j: int) -> Tensor:
+def swap_rows(system: Tensor, i: int, j: int):
     """Swaps rows i and j of the system of equations.
     
     Args:
         system (Tensor): system of equations
         i (int): row index
         j (int): row index
-        
-    Returns:
-        Tensor: system of equations with swapped rows
     """
     system[[i, j]] = system[[j, i]]
-    return system
 
 
-def multiply_row(system: Tensor, i: int, k: float) -> Tensor:
+def multiply_row(system: Tensor, i: int, k: float):
     """Multiplies row i of the system of equations by k.
     
     Args:
         system (Tensor): system of equations
         i (int): row index
         k (float): scalar
-        
-    Returns:
-        Tensor: system of equations with row i multiplied by k
     """
     system[i] *= k
-    return system
 
 
-def reduce_rows(system: Tensor, reduced_row_idx: int, other_row_idx: int, k: float) -> Tensor:
+def reduce_rows(system: Tensor, reduced_row_idx: int, other_row_idx: int, k: float):
     """Adds k times row j to row i of the system of equations.
     
     Args:
@@ -44,14 +36,11 @@ def reduce_rows(system: Tensor, reduced_row_idx: int, other_row_idx: int, k: flo
         reduced_row_idx (int): row index of row to be reduced
         other_row_idx (int): row index of row to be added
         k (float): scalar
-        
-    Returns:
-        Tensor: system of equations with row i added by k times row j
     """
     system[reduced_row_idx] += k * system[other_row_idx]
-    return system
 
 
+@no_grad()
 def gaussian_elimination(system: Tensor) -> Tuple[Tensor, Record]:
     """Transforms the system of equations to reduced row echelon form 
     by employing elementary row operations.
@@ -86,26 +75,24 @@ def gaussian_elimination(system: Tensor) -> Tuple[Tensor, Record]:
 
         # swap rows
         if max_idx != k:
-            record.add(system.clone(), SwapRows(k, max_idx))
+            record.add(system.clone().detach(), SwapRows(k, max_idx))
             swap_rows(system, k, max_idx)
 
         # normalize pivot rows
-        system_clone = system.clone()
-        record.add(system_clone, MultiplyRow(k, Quotient(1., system_clone[k, k])))
+        record.add(system.clone().detach(), MultiplyRow(k, Quotient(1., system[k, k].item())))
         multiply_row(system, k, 1. / system[k, k])
 
         # reduce rows
         for i in range(k + 1, num_equations):
-            system_clone = system.clone()
-            record.add(system_clone, ReduceRows(i, k, Quotient(-system_clone[i, k], 
-                                                                system_clone[k, k])))
+            record.add(system.clone().detach(), ReduceRows(i, k, Quotient(-system[i, k].item(), 
+                                                                        system[k, k].item())))
             factor: float = system[i, k] / system[k, k]
             reduce_rows(system, i, k, -factor)
 
     # backward elimination
     for k in range(num_variables - 1, 0, -1):
         for i in range(k - 1, -1, -1):
-            record.add(system.clone(), ReduceRows(i, k, Quotient(-system[i, k], system[k, k])))
+            record.add(system.clone().detach(), ReduceRows(i, k, Quotient(-system[i, k].item(), system[k, k].item())))
             factor: float = system[i, k] / system[k, k]
             reduce_rows(system, i, k, -factor)
 
