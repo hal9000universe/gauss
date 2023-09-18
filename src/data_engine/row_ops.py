@@ -201,7 +201,7 @@ def repr_system_op_pair(system_op_pair: SystemOperationPair, names: List[str]) -
     Returns:
         str: string representation of the system of equations and the corresponding operation
     """
-    return f"{repr_system(system_op_pair.system, names)}?{system_op_pair.operation} \n"
+    return f"{repr_system(system_op_pair.system, names)}?{system_op_pair.operation}"
 
 
 def repr_record(record: Record, names: List[str]) -> str:
@@ -215,5 +215,9 @@ def repr_record(record: Record, names: List[str]) -> str:
     """
     repr_record: str = ""
     for system_op_pair in record.system_op_pairs():
-        repr_record += f"{repr_system_op_pair(system_op_pair, names)}"
+        repr_record += f"{repr_system_op_pair(system_op_pair, names)} \n"
+    # remove final newline
+    repr_record = repr_record[:-1]
+    # add end token
+    repr_record += "/rref \n"
     return repr_record

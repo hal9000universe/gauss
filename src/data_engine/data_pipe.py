@@ -1,12 +1,9 @@
-from torch import Tensor, rand, tensor
-from torch.nn import Embedding
+import torch
 import torchtext.transforms as T
+
 from torchdata.datapipes.iter import IterableWrapper
 from typing import List, Tuple, Iterable
 from random import randint
-
-from src.data_engine.solve import gaussian_elimination, repr_record
-
 from tokenizers import (
     decoders,
     models,
@@ -16,6 +13,9 @@ from tokenizers import (
     trainers,
     Tokenizer,
 )
+
+from src.data_engine.solve import gaussian_elimination, repr_record
+
 
 def generate_examples(n: int = 10) -> List[str]:
     """Generates n random examples.
@@ -29,10 +29,10 @@ def generate_examples(n: int = 10) -> List[str]:
     for i in range(n):
         # generate random matrix
         # 1. choose number of variables and equations
-        num_vars = randint(2, 5)
-        num_eqs = randint(num_vars, 5)
+        num_vars = randint(2, 10)
+        num_eqs = num_vars
         # 2. generate random matrix
-        mat = (rand(num_eqs, num_vars + 1) - 0.5) * 2000.
+        mat = (torch.rand(num_eqs, num_vars + 1) - 0.5) * 2000.
         # 3. compute solution
         mat, record = gaussian_elimination(mat)
         # 4. format solution
@@ -117,6 +117,7 @@ def format_decoding(decoding: str) -> str:
     decoding = decoding.replace("( ", "(")
     decoding = decoding.replace("- ", "-")
     decoding = decoding.replace(", ", ",")
+    decoding = decoding.replace("/n ", " /n")
     return decoding
 
 
@@ -179,7 +180,7 @@ def separate_source_target(sequence_pairs: List[Tuple[List[int], List[int]]]) ->
     return sources,targets
 
 
-def apply_padding(pair_of_sequences) -> Tuple[Tensor, Tensor]:
+def apply_padding(pair_of_sequences) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Convert sequences to tensors and apply padding
 
@@ -187,7 +188,7 @@ def apply_padding(pair_of_sequences) -> Tuple[Tensor, Tensor]:
         pair_of_sequences (Tuple[List[int], List[int]]): pair of sequences
 
     Returns:
-        Tuple[Tensor, Tensor]: pair of tensors
+        Tuple[torch.Tensor, torch.Tensor]: pair of tensors
     """
     padding_value = get_tokenizer().token_to_id("[PAD]")
     return (T.ToTensor(padding_value)(list(pair_of_sequences[0])), 
