@@ -51,14 +51,6 @@ def gen_data():
             f.write(example)
 
 
-def yield_training_corpus() -> Iterable[str]:
-    """Reads the training corpus from file line by line."""
-    with open("data/examples.txt", "r") as f:
-        examples = f.readlines()
-    for line in examples:
-        yield line
-
-
 def build_tokenizer() -> Tokenizer:
     """Builds a tokenizer.
     
@@ -121,36 +113,23 @@ def format_decoding(decoding: str) -> str:
     return decoding
 
 
+def yield_training_corpus() -> Iterable[Tuple[List[int], List[int]]]:
+    """Reads the training corpus from file line by line."""
+    with open("data/examples.txt", "r") as f:
+        examples = f.readlines()
+    for line in examples:
+        # split system and operation
+        system_operation = line.split("?")
+        # tokenize 
+        system_tokens = get_tokenizer().encode(system_operation[0]).ids
+        operation_tokens = get_tokenizer().encode(system_operation[1]).ids
+        for idx in range(0, len(operation_tokens)):
+            x = system_tokens + operation_tokens[:idx]
+            y = operation_tokens[idx]
+            yield (x, y)
+
+
 # data transformation pipeline
-def split_x_y(example: str) -> Tuple[str, str]:
-    """Splits the example system_operation_pair into the system and the operation.
-
-    Args:
-        example (str): example system_operation_pair
-
-    Returns:
-        Tuple[str, str]: system, operation
-    """
-    system, operation = example.split("?")
-    operation = operation.replace(" \n", "")
-    return (system, operation)
-
-def encode_x_y(system_operation_pair: Tuple[str, str]) -> Tuple[List[int], List[int]]:
-    """Encodes the system_operation_pair.
-
-    Args:
-        system_operation_pair (Tuple[str, str]): system_operation_pair
-
-    Returns:
-        Tuple[List[int], List[int]]: encoded system_operation_pair
-    """
-    tokenizer = get_tokenizer()
-    system, operation = system_operation_pair
-    system = tokenizer.encode(system).ids
-    operation = tokenizer.encode(operation).ids
-    return (system, operation)
-
-
 def sort_bucket(bucket: List[Tuple[List[int], List[int]]]) -> List[Tuple[List[int], List[int]]]:
     """
     Function to sort a given bucket. Here, we want to sort based on the length of
@@ -162,7 +141,7 @@ def sort_bucket(bucket: List[Tuple[List[int], List[int]]]) -> List[Tuple[List[in
     Returns:
         List[Tuple[List[int], List[int]]]: sorted bucket
     """
-    return sorted(bucket, key=lambda x: (len(x[0]), len(x[1])))
+    return sorted(bucket, key=lambda x: len(x[0]))
 
 
 def separate_source_target(sequence_pairs: List[Tuple[List[int], List[int]]]) -> Tuple[Tuple[List[int], ...], Tuple[List[int], ...]]:
@@ -191,8 +170,11 @@ def apply_padding(pair_of_sequences) -> Tuple[torch.Tensor, torch.Tensor]:
         Tuple[torch.Tensor, torch.Tensor]: pair of tensors
     """
     padding_value = get_tokenizer().token_to_id("[PAD]")
-    return (T.ToTensor(padding_value)(list(pair_of_sequences[0])), 
-            T.ToTensor(padding_value)(list(pair_of_sequences[1])))
+    x = T.ToTensor(padding_value)(list(pair_of_sequences[0]))
+    y = T.ToTensor(padding_value)(list(pair_of_sequences[1]))
+    # create FloatTensor padding mask for x which is added in the forward pass
+    src_key_padding_mask = (x == padding_value).to(torch.bool)
+    return (x, src_key_padding_mask), y
 
 
 def build_data_pipe() -> IterableWrapper:
@@ -203,11 +185,6 @@ def build_data_pipe() -> IterableWrapper:
     """
     # get training corpus
     dp: IterableWrapper = IterableWrapper(yield_training_corpus())
-    # split system and operation
-    dp = dp.map(split_x_y) 
-    # tokenize system and operation
-    tokenizer = get_tokenizer()
-    dp = dp.map(encode_x_y)
     # bucket batch
     dp = dp.bucketbatch(
         batch_size=64,

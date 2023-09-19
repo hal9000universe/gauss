@@ -32,7 +32,7 @@ def test_tokenizer():
 def test_data_pipe():
     tokenizer = get_tokenizer()
     data_pipe = build_data_pipe()
-    x, y = next(iter(data_pipe))
+    (x, src_key_padding_mask), y = next(iter(data_pipe))
     print(x.shape, x)
     print(y.shape, y)
 
@@ -40,15 +40,22 @@ def test_data_pipe():
 def test_gauss_net():
     # get input
     data_pipe = build_data_pipe()
-    x, y = next(iter(data_pipe))
+    (x, src_key_padding_mask), y = next(iter(data_pipe))
     print(x.shape, y.shape)
 
+    print(src_key_padding_mask)
+
     model = create_gauss_net()
-    output = model(x)
+    output = model(x, src_key_padding_mask=src_key_padding_mask)
     print(output.shape)
+
+    print(x[0])
 
     prediction = output.argmax(dim=-1)
     print(prediction.shape)
+
+    loss = model(x, targets=y)
+    print(loss.shape)
 
 
 def all():
@@ -68,7 +75,4 @@ def all():
 
 
 if __name__ == "__main__":
-    # test_gaussian_elimination()  # 1.
-    # test_tokenizer()  # 2.
-    # test_data_pipe()  # 3.
-    test_gauss_net()  # 4.
+    test_gauss_net()

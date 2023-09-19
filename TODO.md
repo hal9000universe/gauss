@@ -8,5 +8,5 @@
 - [x] data pipe
 
 # deep learning
-- [ ] transformer
+- [x] transformer 
 - [ ] training loop
