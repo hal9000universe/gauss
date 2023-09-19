@@ -3,3 +3,4 @@ torchdata
 torchtext
 numpy
 tokenizers
+pytest
