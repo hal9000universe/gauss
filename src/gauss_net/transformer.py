@@ -1,3 +1,5 @@
+#  Copyright (c) 2023. Benjamin Schoofs
+
 import torch
 import torch.nn as nn
 import tokenizers
@@ -64,7 +66,7 @@ def create_gauss_net(embed_dim: int = 64, dim_feedforward: int = 512) -> GaussNe
             dim_feedforward=dim_feedforward,
             nhead=4,
             batch_first=True),
-        num_layers=5
+        num_layers=2
     )
     # create prediction head
     prediction_head: nn.Linear = nn.Linear(embed_dim, tokenizer.get_vocab_size())

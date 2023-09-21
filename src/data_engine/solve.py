@@ -1,8 +1,9 @@
+#  Copyright (c) 2023. Benjamin Schoofs
+
 from torch import Tensor, no_grad
 from typing import Tuple
-from copy import copy
 
-from src.data_engine.row_ops import Operation, SwapRows, MultiplyRow, ReduceRows, Record, repr_record, repr_system, Quotient
+from src.data_engine.row_ops import SwapRows, MultiplyRow, ReduceRows, Record, Quotient
 
 
 # elementary row operations
@@ -65,7 +66,7 @@ def gaussian_elimination(system: Tensor) -> Tuple[Tensor, Record]:
 
         # find pivot
         for i in range(k + 1, num_equations):
-            if abs(system[i, k]) > max_value:
+            if abs(system[i, k]) > abs(max_value):
                 max_value = system[i, k]
                 max_idx = i
 
@@ -84,8 +85,8 @@ def gaussian_elimination(system: Tensor) -> Tuple[Tensor, Record]:
 
         # reduce rows
         for i in range(k + 1, num_equations):
-            record.add(system.clone().detach(), ReduceRows(i, k, Quotient(-system[i, k].item(), 
-                                                                        system[k, k].item())))
+            record.add(system.clone().detach(), ReduceRows(i, k, Quotient(-system[i, k].item(),
+                                                                          system[k, k].item())))
             factor: float = system[i, k] / system[k, k]
             reduce_rows(system, i, k, -factor)
 

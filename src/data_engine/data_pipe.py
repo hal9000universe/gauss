@@ -1,3 +1,5 @@
+#  Copyright (c) 2023. Benjamin Schoofs
+
 import torch
 import torchtext.transforms as T
 
@@ -14,14 +16,20 @@ from tokenizers import (
     Tokenizer,
 )
 
-from src.data_engine.solve import gaussian_elimination, repr_record
+from src.data_engine.solve import gaussian_elimination
+from src.data_engine.repr import repr_record
 
 
-def generate_examples(n: int = 10) -> List[str]:
+FILE: str = "data/examples.txt"
+
+
+def gen_examples(n: int = 10, min_num_vars: int = 2, max_num_vars: int = 10) -> List[str]:
     """Generates n random examples.
     
     Args:
         n (int, optional): number of examples. Defaults to 10.
+        min_num_vars (int, optional): minimal number of variables. Defaults to 2.
+        max_num_vars (int, optional): maximal number of variables. Defaults to 10.
         
     Returns:
         List[str]: list of examples"""
@@ -29,12 +37,12 @@ def generate_examples(n: int = 10) -> List[str]:
     for i in range(n):
         # generate random matrix
         # 1. choose number of variables and equations
-        num_vars = randint(2, 10)
+        num_vars = randint(min_num_vars, max_num_vars)
         num_eqs = num_vars
         # 2. generate random matrix
-        mat = (torch.rand(num_eqs, num_vars + 1) - 0.5) * 2000.
+        system = (torch.rand(num_eqs, num_vars + 1) - 0.5) * 2000.
         # 3. compute solution
-        mat, record = gaussian_elimination(mat)
+        solution, record = gaussian_elimination(system)
         # 4. format solution
         names: List[str] = [f"x_({i})" for i in range(num_vars)]
         example = repr_record(record, names)
@@ -42,18 +50,18 @@ def generate_examples(n: int = 10) -> List[str]:
     return examples
 
 
-def gen_data():
+def gen_data(file: str = FILE, num_examples: int = 100):
     """Generates the data and saves it to file."""
-    examples = generate_examples(100)
+    examples = gen_examples(num_examples, 2, 10)
     # train tokenizer
-    with open("data/examples.txt", "w") as f:
+    with open(file, "w") as f:
         for example in examples:
             f.write(example)
 
 
-def yield_examples() -> Iterable[str]:
+def yield_examples(file: str = FILE) -> Iterable[str]:
     """Reads the examples from file line by line."""
-    with open("data/examples.txt", "r") as f:
+    with open(file, "r") as f:
         examples = f.readlines()
     for line in examples:
         yield line
@@ -187,9 +195,9 @@ def format_decoding(decoding: str) -> str:
     return decoding
 
 
-def yield_training_corpus() -> Iterable[Tuple[List[int], List[int]]]:
+def yield_training_corpus(file: str = FILE) -> Iterable[Tuple[List[int], List[int]]]:
     """Reads the training corpus from file line by line."""
-    with open("data/examples.txt", "r") as f:
+    with open(file, "r") as f:
         examples = f.readlines()
     for line in examples:
         # split system and operation
@@ -252,14 +260,14 @@ def apply_padding(pair_of_sequences) -> Tuple[Tuple[torch.Tensor, torch.Tensor],
     return (x, src_key_padding_mask), y
 
 
-def build_data_pipe() -> IterableWrapper:
+def build_data_pipe(data_file: str = FILE) -> IterableWrapper:
     """Builds the data pipe.
 
     Returns:
         IterableWrapper: data pipe
     """
     # get training corpus
-    dp: IterableWrapper = IterableWrapper(yield_training_corpus())
+    dp: IterableWrapper = IterableWrapper(yield_training_corpus(file=data_file))
     # bucket batch
     dp = dp.bucketbatch(
         batch_size=64,

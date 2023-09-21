@@ -1,10 +1,12 @@
+#  Copyright (c) 2023. Benjamin Schoofs
+
 import torch
 
 from src.data_engine.data_pipe import build_data_pipe
 from src.gauss_net.transformer import create_gauss_net
 
 
-def training_loop():
+def training_loop(num_epochs: int = 2):
     # build data pipe
     data_pipe = build_data_pipe()
     # create model
@@ -12,7 +14,6 @@ def training_loop():
     # create optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     # define training loop
-    num_epochs = 100
     monitor_freq = 10
     # train
     for epoch in range(0, num_epochs):
@@ -31,3 +32,4 @@ def training_loop():
     save_file = "model.pt"
     torch.save(model.state_dict(), save_file)
     print(f"Model saved to {save_file}")
+
