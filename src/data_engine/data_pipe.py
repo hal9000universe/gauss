@@ -51,7 +51,12 @@ def gen_examples(n: int = 10, min_num_vars: int = 2, max_num_vars: int = 10) -> 
 
 
 def gen_data(file: str = FILE, num_examples: int = 100):
-    """Generates the data and saves it to file."""
+    """Generates the data and saves it to file.
+
+    Args:
+        file (str, optional): file to save the data to. Defaults to FILE.
+        num_examples (int, optional): number of examples. Defaults to 100.
+    """
     examples = gen_examples(num_examples, 2, 10)
     # train tokenizer
     with open(file, "w") as f:
@@ -60,7 +65,14 @@ def gen_data(file: str = FILE, num_examples: int = 100):
 
 
 def yield_examples(file: str = FILE) -> Iterable[str]:
-    """Reads the examples from file line by line."""
+    """Reads the examples from file line by line.
+
+    Args:
+        file (str, optional): file to read from. Defaults to FILE.
+
+    Yields:
+        Iterable[str]: example
+    """
     with open(file, "r") as f:
         examples = f.readlines()
     for line in examples:
@@ -196,7 +208,14 @@ def format_decoding(decoding: str) -> str:
 
 
 def yield_training_corpus(file: str = FILE) -> Iterable[Tuple[List[int], List[int]]]:
-    """Reads the training corpus from file line by line."""
+    """Reads the training corpus from file line by line.
+
+    Args:
+        file (str, optional): file to read from. Defaults to FILE.
+
+    Yields:
+        Iterable[Tuple[List[int], List[int]]]: training corpus
+    """
     with open(file, "r") as f:
         examples = f.readlines()
     for line in examples:
@@ -262,6 +281,9 @@ def apply_padding(pair_of_sequences) -> Tuple[Tuple[torch.Tensor, torch.Tensor],
 
 def build_data_pipe(data_file: str = FILE) -> IterableWrapper:
     """Builds the data pipe.
+
+    Args:
+        data_file (str, optional): file to read from. Defaults to FILE.
 
     Returns:
         IterableWrapper: data pipe

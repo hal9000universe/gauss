@@ -10,17 +10,18 @@
 # deep learning
 - [x] transformer 
 - [x] training loop
-- [ ] positional embedding
-- [ ] evaluation loop
+- [x] positional embedding
+- [x] evaluation loop
+- [ ] enhance training (adaptive model checkpoints, visualization, add more function arguments)
 - [ ] optimize training loop
 - [ ] add learning rate scheduler
 - [ ] add accelerator support
 - [ ] connect to paperspace.com
 
 # debugging
-- [ ] use random seed
-- [ ] test data pipeline
-- [ ] test model initialization: E[L] = ln(1 / k)
+- [x] use random seed
+- [x] test data pipeline
+- [x] test model initialization: E[L] = -ln(1 / k)
 - [ ] small model tests
 - [ ] overfit on small dataset (no dropout)
 - [ ] epoch-loss graphs 
