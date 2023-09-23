@@ -29,7 +29,7 @@ class Quotient:
         """
         return self._value
 
-    def numerator_denominator(self) -> Tuple[float, 2]:
+    def numerator_denominator(self) -> Tuple[float, float]:
         """Returns the numerator and the denominator.
         
         Returns:

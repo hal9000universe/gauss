@@ -50,16 +50,16 @@ def gen_examples(n: int = 10, min_num_vars: int = 2, max_num_vars: int = 10) -> 
     return examples
 
 
-def gen_data(file: str = FILE, num_examples: int = 100):
+def gen_data(num_examples: int = 100, save_file: str = FILE):
     """Generates the data and saves it to file.
 
     Args:
-        file (str, optional): file to save the data to. Defaults to FILE.
+        save_file (str, optional): file to save the data to. Defaults to FILE.
         num_examples (int, optional): number of examples. Defaults to 100.
     """
     examples = gen_examples(num_examples, 2, 10)
     # train tokenizer
-    with open(file, "w") as f:
+    with open(save_file, "w") as f:
         for example in examples:
             f.write(example)
 
@@ -79,7 +79,7 @@ def yield_examples(file: str = FILE) -> Iterable[str]:
         yield line
 
 
-def build_tokenizer():
+def build_tokenizer(save_file: str = "data/tokenizer.json"):
     """Builds a tokenizer."""
     vocab: Dict[str, int] = {
         "[UNK]": 0,
@@ -178,15 +178,15 @@ def build_tokenizer():
 
     tokenizer.decoder = decoders.WordPiece(prefix="##")
 
-    tokenizer.save("data/tokenizer.json")
+    tokenizer.save(save_file)
 
 
-def get_tokenizer() -> Tokenizer:
+def get_tokenizer(file: str = "data/tokenizer.json") -> Tokenizer:
     """Retrieves the tokenizer.
     
     Returns:
         Tokenizer: tokenizer"""
-    return Tokenizer.from_file("data/tokenizer.json")
+    return Tokenizer.from_file(file)
 
 
 def format_decoding(decoding: str) -> str:
@@ -279,11 +279,12 @@ def apply_padding(pair_of_sequences) -> Tuple[Tuple[torch.Tensor, torch.Tensor],
     return (x, src_key_padding_mask), y
 
 
-def build_data_pipe(data_file: str = FILE) -> IterableWrapper:
+def build_data_pipe(data_file: str = FILE, batch_size: int = 64) -> IterableWrapper:
     """Builds the data pipe.
 
     Args:
         data_file (str, optional): file to read from. Defaults to FILE.
+        batch_size (int, optional): batch size. Defaults to 64.
 
     Returns:
         IterableWrapper: data pipe
@@ -292,7 +293,7 @@ def build_data_pipe(data_file: str = FILE) -> IterableWrapper:
     dp: IterableWrapper = IterableWrapper(yield_training_corpus(file=data_file))
     # bucket batch
     dp = dp.bucketbatch(
-        batch_size=64,
+        batch_size=batch_size,
         use_in_batch_shuffle=False, 
         sort_key=sort_bucket,
     )

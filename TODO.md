@@ -12,7 +12,7 @@
 - [x] training loop
 - [x] positional embedding
 - [x] evaluation loop
-- [ ] enhance training (adaptive model checkpoints, visualization, add more function arguments)
+- [x] enhance training (adaptive model checkpoints, visualization, add more function arguments)
 - [ ] optimize training loop
 - [ ] add learning rate scheduler
 - [ ] add accelerator support
@@ -28,6 +28,6 @@
 - [ ] incrementally build up complexity
 
 # model optimization
-- [ ] regularization (l1/l2)
-- [ ] normalization
+- [ ] regularization 
+- [x] normalization
 - [ ] hyperparameter optimization

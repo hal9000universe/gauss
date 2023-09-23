@@ -7,12 +7,8 @@ from torchdata.datapipes.iter import IterableWrapper
 from src.data_engine.solve import gaussian_elimination
 from src.data_engine.repr import repr_record
 from src.data_engine.data_pipe import build_data_pipe
-from src.gauss_net.transformer import create_gauss_net
+from src.gauss_net.transformer import GaussNet
 from src.gauss_net.training import training_loop
-
-
-# set seed
-torch.manual_seed(0)
 
 
 # define save file
@@ -31,11 +27,11 @@ def gen_easy_examples(n: int = 10):
     return examples
 
 
-def gen_easy_data(num_examples: int = 100):
+def gen_easy_data(num_examples: int = 100, save_file: str = FILE):
     """Generates the data and saves it to file."""
     examples = gen_easy_examples(num_examples)
     # save to file
-    with open(FILE, "w") as f:
+    with open(save_file, "w") as f:
         for example in examples:
             f.write(example)
 
@@ -46,21 +42,39 @@ def build_easy_data_pipe() -> IterableWrapper:
 
 def easy_loop():
     # generate data
-    gen_easy_data(num_examples=200)
-    # data_pipe_builder
-    data_pipe_builder = build_easy_data_pipe
+    num_examples = 400
+    gen_easy_data(num_examples=num_examples, save_file=FILE)
+    # build data pipe
+    data_pipe_builder = build_data_pipe
     # create model
-    model = create_gauss_net(
+    model = GaussNet(
         embed_dim=64,
         dim_feedforward=512,
         num_heads=4,
-        num_layers=5,
+        num_layers=4,
     )
     # create optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    lr = 0.001
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # define training loop
-    num_epochs: int = 50000
-    monitor_freq = 5
+    num_epochs: int = 10000
+    monitor_freq = 1000
     evaluation_freq = 10000
+    save_file = "models/gauss-2var-easy-min.pt"
+    evaluation_file = "data/easy_test_examples.txt"
+    plotting_freq = 10000
+    plot_file = f"plots/gauss-2var-easy-min-{num_epochs}-{num_examples}-{lr}.png"
+
     # train
-    training_loop(data_pipe_builder, model, optimizer, num_epochs, monitor_freq, evaluation_freq)
+    training_loop(
+        data_pipe_builder=data_pipe_builder,
+        model=model,
+        optimizer=optimizer,
+        num_epochs=num_epochs,
+        monitor_freq=monitor_freq,
+        evaluation_freq=evaluation_freq,
+        save_file=save_file,
+        evaluation_file=evaluation_file,
+        plotting_freq=plotting_freq,
+        plot_file=plot_file,
+    )

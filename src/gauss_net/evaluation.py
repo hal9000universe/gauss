@@ -4,12 +4,12 @@ from src.gauss_net.transformer import GaussNet
 from src.data_engine.data_pipe import build_data_pipe
 
 
-def evaluate(data_file: str, model: GaussNet) -> float:
+def evaluate(model: GaussNet, data_file: str) -> float:
     """Evaluate the model on the data.
 
     Args:
-        data_file (str): data file
         model (GaussNet): model
+        data_file (str): data file
 
     Returns:
         float: loss

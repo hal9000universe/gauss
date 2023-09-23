@@ -4,3 +4,4 @@ torchtext
 numpy
 tokenizers
 pytest
+matplotlib

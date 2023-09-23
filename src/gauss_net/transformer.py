@@ -38,14 +38,31 @@ class GaussNet(nn.Module):
     _transformer: nn.TransformerEncoder
     _prediction_head: nn.Linear
 
-    def __init__(self, embedding: nn.Embedding, positional_encoding: PositionalEncoding,
-                 transformer: nn.TransformerEncoder, prediction_head: nn.Linear):
+    def __init__(self, embed_dim: int = 64, dim_feedforward: int = 512,
+                 num_heads: int = 4, num_layers: int = 4):
         super().__init__()
-        self._embedding = embedding
-        self._positional_encoding = positional_encoding
-        self._transformer = transformer
-        self._normalization = nn.LayerNorm(embedding.embedding_dim)
-        self._prediction_head = prediction_head
+        # check well-defined
+        assert embed_dim % num_heads == 0
+        # get tokenizer
+        tokenizer: tokenizers.Tokenizer = get_tokenizer()
+        # create embedding
+        self._embedding: nn.Embedding = nn.Embedding(tokenizer.get_vocab_size(), embed_dim,
+                                                     padding_idx=tokenizer.token_to_id("[PAD]"))
+        # create positional encoding
+        self._positional_encoding = PositionalEncoding(embed_dim)
+        # create transformer
+        self._transformer = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(
+                d_model=embed_dim,
+                dim_feedforward=dim_feedforward,
+                nhead=num_heads,
+                batch_first=True),
+            num_layers=num_layers,
+        )
+        # create normalization
+        self._normalization = nn.LayerNorm(embed_dim)
+        # create prediction head
+        self._prediction_head = nn.Linear(embed_dim, tokenizer.get_vocab_size())
 
     def forward(
             self,
@@ -74,35 +91,3 @@ class GaussNet(nn.Module):
             return loss
         else:
             return logits
-
-
-def create_gauss_net(embed_dim: int = 64, dim_feedforward: int = 512,
-                     num_heads: int = 4, num_layers: int = 4) -> GaussNet:
-    """Creates the model.
-    
-    Returns:
-        GaussNet: model
-    """
-    # check well-defined
-    assert embed_dim % num_heads == 0
-    # get tokenizer
-    tokenizer: tokenizers.Tokenizer = get_tokenizer()
-    # create embedding
-    embedding: nn.Embedding = nn.Embedding(tokenizer.get_vocab_size(), embed_dim,
-                                           padding_idx=tokenizer.token_to_id("[PAD]"))
-    # create positional encoding
-    positional_encoding: PositionalEncoding = PositionalEncoding(embed_dim)
-    # create transformer
-    transformer: nn.TransformerEncoder = nn.TransformerEncoder(
-        nn.TransformerEncoderLayer(
-            d_model=embed_dim,
-            dim_feedforward=dim_feedforward,
-            nhead=num_heads,
-            batch_first=True),
-        num_layers=num_layers,
-    )
-    # create prediction head
-    prediction_head: nn.Linear = nn.Linear(embed_dim, tokenizer.get_vocab_size())
-    # create model
-    model = GaussNet(embedding, positional_encoding, transformer, prediction_head)
-    return model
