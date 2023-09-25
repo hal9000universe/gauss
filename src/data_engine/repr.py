@@ -55,7 +55,7 @@ def repr_record(record: Record, names: List[str]) -> str:
         str: string representation of the record
     """
     record_representation: str = ""
-    for system_op_pair in record.system_op_pairs():
+    for system_op_pair in record.system_operation_pairs():
         record_representation += f"{repr_system_op_pair(system_op_pair, names)} \n"
     # remove final newline
     record_representation = record_representation[:-1]

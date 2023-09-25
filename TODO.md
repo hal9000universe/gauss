@@ -1,7 +1,12 @@
 ## TODO
 
+# code
+- [ ] remove default arguments  
+- [ ] restructure repo (tokenizer, data, training, model, evaluation)
+
 # data
 - [x] gaussian elimination
+- [ ] 1 variable linear equations
 - [x] tokenizer
 - [x] dataset with (x, y) pairs
 - [x] embedding
@@ -22,7 +27,7 @@
 - [x] use random seed
 - [x] test data pipeline
 - [x] test model initialization: E[L] = -ln(1 / k)
-- [ ] small model tests
+- [ ] one variable training
 - [ ] overfit on small dataset (no dropout)
 - [ ] epoch-loss graphs 
 - [ ] incrementally build up complexity

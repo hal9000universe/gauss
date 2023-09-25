@@ -6,8 +6,6 @@ import tokenizers
 
 from typing import Optional
 
-from src.data_engine.data_pipe import get_tokenizer
-
 
 class PositionalEncoding(nn.Module):
 
@@ -32,19 +30,31 @@ class PositionalEncoding(nn.Module):
 
 
 class GaussNet(nn.Module):
-    """Gaussian Elimination Network."""
+    """Gaussian Elimination Network.
+
+    Args:
+        embed_dim (int): embedding dimension
+        dim_feedforward (int): dimension of the feedforward network
+        num_heads (int): number of heads
+        num_layers (int): number of layers
+        tokenizer (tokenizers.Tokenizer): tokenizer
+    """
     _embedding: nn.Embedding
     _positional_encoding: PositionalEncoding
     _transformer: nn.TransformerEncoder
     _prediction_head: nn.Linear
+    _normalization: nn.LayerNorm
+    _tokenizer: tokenizers.Tokenizer
 
-    def __init__(self, embed_dim: int = 64, dim_feedforward: int = 512,
-                 num_heads: int = 4, num_layers: int = 4):
+    def __init__(self,
+                 embed_dim: int,
+                 dim_feedforward: int,
+                 num_heads: int,
+                 num_layers: int,
+                 tokenizer: tokenizers.Tokenizer):
         super().__init__()
         # check well-defined
         assert embed_dim % num_heads == 0
-        # get tokenizer
-        tokenizer: tokenizers.Tokenizer = get_tokenizer()
         # create embedding
         self._embedding: nn.Embedding = nn.Embedding(tokenizer.get_vocab_size(), embed_dim,
                                                      padding_idx=tokenizer.token_to_id("[PAD]"))
@@ -63,6 +73,12 @@ class GaussNet(nn.Module):
         self._normalization = nn.LayerNorm(embed_dim)
         # create prediction head
         self._prediction_head = nn.Linear(embed_dim, tokenizer.get_vocab_size())
+        # create tokenizer attribute
+        self._tokenizer = tokenizer
+
+    def get_tokenizer(self) -> tokenizers.Tokenizer:
+        """Returns the tokenizer."""
+        return self._tokenizer
 
     def forward(
             self,
@@ -87,7 +103,7 @@ class GaussNet(nn.Module):
         logits = self._prediction_head(x[:, -1, :])
         if targets is not None:
             loss = torch.nn.functional.cross_entropy(logits, targets,
-                                                     ignore_index=get_tokenizer().token_to_id("[PAD]"))
+                                                     ignore_index=self._tokenizer.token_to_id("[PAD]"))
             return loss
         else:
             return logits

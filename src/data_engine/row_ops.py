@@ -145,11 +145,11 @@ class SystemOperationPair(NamedTuple):
 
 class Record:
     """Records a history of system states and operations."""
-    _system_op_pairs: List[SystemOperationPair]
+    _system_operation_pairs: List[SystemOperationPair]
 
     def __init__(self):
         """Initializes the record with the initial state of the system of equations."""
-        self._system_op_pairs = []
+        self._system_operation_pairs = []
 
     def add(self, system: torch.Tensor, operation: Operation):
         """Adds a pair of a system of equations and the corresponding operation to the record.
@@ -158,12 +158,12 @@ class Record:
             system (torch.Tensor): system of equations
             operation (str): operation performed on the system of equations
         """
-        self._system_op_pairs.append(SystemOperationPair(system, operation))
+        self._system_operation_pairs.append(SystemOperationPair(system, operation))
 
-    def system_op_pairs(self) -> List[SystemOperationPair]:
+    def system_operation_pairs(self) -> List[SystemOperationPair]:
         """Returns the list of system-operation pairs.
         
         Returns:
             List[SystemOperationPair]: list of system-operation pairs
         """
-        return self._system_op_pairs
+        return self._system_operation_pairs

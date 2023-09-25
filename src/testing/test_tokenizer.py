@@ -1,9 +1,9 @@
-from src.data_engine.data_pipe import get_tokenizer, format_decoding
+from src.data_engine.data_pipe import fetch_tokenizer, format_decoding
 
 
 def test_tokenizer():
     # get tokenizer
-    tokenizer = get_tokenizer()
+    tokenizer = fetch_tokenizer()
     original = ("-312.33953857421875*x_(0) + 856.2227783203125*x_(1) + 352.9467468261719*x_(2) + 529.22119140625*x_(3) "
                 "= -435.47772216796875 /n789.8570556640625*x_(0) + 19.7451114654541*x_(1) + 642.3790283203125*x_(2) + "
                 "339.9715576171875*x_(3) = -719.56396484375 /n309.1565246582031*x_(0) + 782.404296875*x_(1) + "

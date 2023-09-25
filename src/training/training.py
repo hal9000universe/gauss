@@ -5,14 +5,13 @@ from typing import Callable, Optional, List
 import torch
 from torchdata.datapipes.iter import IterableWrapper
 
-from src.data_engine.data_pipe import build_data_pipe, gen_data
 from src.gauss_net.transformer import GaussNet
 from src.gauss_net.evaluation import evaluate
 
 import matplotlib.pyplot as plt
 
 
-def create_plot(x: List[float], y: List[float], title: str, xlabel: str, ylabel: str, save_file: Optional[str] = None):
+def plot(x: List[float], y: List[float], title: str, xlabel: str, ylabel: str, save_file: Optional[str] = None):
     """Create a plot.
 
     Args:
@@ -98,7 +97,7 @@ def training_loop(
 
             # evaluate
             if step % evaluation_freq == 0:
-                accuracy = evaluate(model, evaluation_file)
+                accuracy = evaluate(model, evaluation_file, 10)
                 print(f"Epoch: {epoch}, Step: {step}, Accuracy: {accuracy}")
 
                 # plotting
@@ -115,11 +114,11 @@ def training_loop(
             if step % plotting_freq == 0:
                 # loss plot
                 file = plot_file.replace(".png", f"-Loss-{step}.png")
-                create_plot(loss_step_list, loss_list, "Loss", "Step", "Loss", file)
+                plot(loss_step_list, loss_list, "Loss", "Step", "Loss", file)
 
                 # accuracy plot
                 file = plot_file.replace(".png", f"-Accuracy-{step}.png")
-                create_plot(accuracy_step_list, accuracy_list, "Accuracy", "Step", "Accuracy", file)
+                plot(accuracy_step_list, accuracy_list, "Accuracy", "Step", "Accuracy", file)
 
             # increment step
             step += 1
@@ -130,47 +129,7 @@ def training_loop(
     print(f"Model saved to {save_file}")
 
     # loss plot
-    create_plot(loss_step_list, loss_list, "Loss", "Step", "Loss", plot_file)
+    plot(loss_step_list, loss_list, "Loss", "Step", "Loss", plot_file)
 
     # accuracy plot
-    create_plot(accuracy_step_list, accuracy_list, "Accuracy", "Step", "Accuracy", plot_file)
-
-
-def main_loop():
-    # generate data
-    num_examples = 10000
-    gen_data(num_examples=num_examples, save_file="data/examples.txt")
-    # build data pipe
-    data_pipe_builder = build_data_pipe
-    # create model
-    model = GaussNet(
-        embed_dim=64,
-        dim_feedforward=512,
-        num_heads=8,
-        num_layers=10,
-    )
-    # create optimizer
-    lr = 0.001
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    # define training loop
-    num_epochs: int = 50000
-    monitor_freq = 1000
-    evaluation_freq = 10000
-    save_file = "models/big-gauss.pt"
-    evaluation_file = "data/easy_test_examples.txt"
-    plotting_freq = 10000
-    plot_file = f"plots/big-gauss-{num_epochs}-{num_examples}-{lr}.png"
-
-    # train
-    training_loop(
-        data_pipe_builder=data_pipe_builder,
-        model=model,
-        optimizer=optimizer,
-        num_epochs=num_epochs,
-        monitor_freq=monitor_freq,
-        evaluation_freq=evaluation_freq,
-        save_file=save_file,
-        evaluation_file=evaluation_file,
-        plotting_freq=plotting_freq,
-        plot_file=plot_file,
-    )
+    plot(accuracy_step_list, accuracy_list, "Accuracy", "Step", "Accuracy", plot_file)
