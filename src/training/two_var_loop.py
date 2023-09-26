@@ -7,7 +7,8 @@ from tokenizers import Tokenizer
 
 from src.data_engine.gaussian_elimination import gaussian_elimination
 from src.data_engine.repr import repr_record
-from src.data_engine.data_pipe import build_data_pipe, fetch_tokenizer
+from src.data_engine.data_pipe import build_data_pipe
+from src.data_engine.tokenizer import fetch_tokenizer
 from src.gauss_net.transformer import GaussNet
 from src.training.training import training_loop
 
@@ -71,9 +72,10 @@ def two_var_loop():
     # generate data
     num_examples = 10000
     gen_2var_data(num_examples=num_examples, save_file=train_data_file)
-    gen_2var_data(num_examples=num_examples // 10, save_file=test_data_file)
+    gen_2var_data(num_examples=num_examples // 100, save_file=test_data_file)
     # build data pipe
-    data_pipe_builder = gen_2var_data_pipe_builder(tokenizer, train_data_file, 10)
+    train_data_pipe_builder = gen_2var_data_pipe_builder(tokenizer, train_data_file, 64)
+    test_data_pipe_builder = gen_2var_data_pipe_builder(tokenizer, test_data_file, 10)
     # create model
     model = GaussNet(
         embed_dim=64,
@@ -94,14 +96,14 @@ def two_var_loop():
 
     # train
     training_loop(
-        data_pipe_builder=data_pipe_builder,
+        train_data_pipe_builder=train_data_pipe_builder,
+        test_data_pipe_builder=test_data_pipe_builder,
         model=model,
         optimizer=optimizer,
         num_epochs=num_epochs,
         monitor_freq=monitor_freq,
         evaluation_freq=evaluation_freq,
         save_file=model_save_file,
-        evaluation_file=test_data_file,
         plotting_freq=plotting_freq,
         plot_file=plot_file,
     )

@@ -7,19 +7,17 @@ from torchdata.datapipes.iter import IterableWrapper
 from typing import List, Tuple, Iterable, Callable
 from tokenizers import Tokenizer
 
-from src.data_engine.tokenizer import fetch_tokenizer
 
-
-def yield_training_corpus(file: str) -> Iterable[Tuple[List[int], List[int]]]:
+def yield_training_corpus(file: str, tokenizer: Tokenizer) -> Iterable[Tuple[List[int], List[int]]]:
     """Reads the training corpus from file line by line.
 
     Args:
         file (str, optional): file to read from.
+        tokenizer (Tokenizer): tokenizer.
 
     Yields:
         Iterable[Tuple[List[int], List[int]]]: training corpus
     """
-    tokenizer = fetch_tokenizer(file)
     with open(file, "r") as f:
         examples = f.readlines()
     for line in examples:
@@ -65,15 +63,19 @@ def separate_source_target(
     return sources, targets
 
 
-def gen_apply_padding(padding_value: int) -> Callable[[Tuple[List[int], List[int]]], Tuple[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]]:
+def gen_apply_padding(padding_value: int) -> Callable[
+        [Tuple[List[int], List[int]]], Tuple[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]
+]:
     """Generates the apply padding function.
 
     Args:
         padding_value (int): padding value.
 
     Returns:
-        Callable[[Tuple[List[int], List[int]]], Tuple[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]]: apply padding function
+        Callable[[Tuple[List[int], List[int]]], Tuple[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]]:
+            apply padding function
     """
+
     def apply_padding(pair_of_sequences) -> Tuple[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
         """
         Convert sequences to tensors and apply padding
@@ -89,6 +91,7 @@ def gen_apply_padding(padding_value: int) -> Callable[[Tuple[List[int], List[int
         # create FloatTensor padding mask for x which is added in the forward pass
         src_key_padding_mask = (x == padding_value).to(torch.bool)
         return (x, src_key_padding_mask), y
+
     return apply_padding
 
 
@@ -104,7 +107,7 @@ def build_data_pipe(tokenizer: Tokenizer, data_file: str, batch_size: int) -> It
         IterableWrapper: data pipe
     """
     # get training corpus
-    dp: IterableWrapper = IterableWrapper(yield_training_corpus(file=data_file))
+    dp: IterableWrapper = IterableWrapper(yield_training_corpus(file=data_file, tokenizer=tokenizer))
     # bucket batch
     dp = dp.bucketbatch(
         batch_size=batch_size,

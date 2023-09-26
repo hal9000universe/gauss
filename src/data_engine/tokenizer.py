@@ -194,11 +194,12 @@ def build_one_var_tokenizer():
         "8": 26,
         "9": 27,
         ".": 28,
+        " ": 29,
     }
     training_string: str = "10x + 10 = 9.0x + 13?/sub(10)" \
                            "10x = 9.0x + 3.0?/sub(9x)" \
                            "x = 3.0?/div(1.0)" \
                            "x = 3.0?/end"
-    examples: Iterable[str] = yield_examples("data/one_var/train_equations.txt")
+    examples: Iterable[str] = yield_examples("data/one_var/int/train_equations.txt")
     save_file: str = "tokenizer/one_var_tokenizer.json"
     build_tokenizer(vocab, training_string, examples, save_file)

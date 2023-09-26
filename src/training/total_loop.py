@@ -1,10 +1,12 @@
 import torch
+from torchdata.datapipes.iter import IterableWrapper
 
-from typing import List
+from typing import List, Callable
 from random import randint
 
 from src.gauss_net.transformer import GaussNet
-from src.data_engine.data_pipe import build_data_pipe, fetch_tokenizer
+from src.data_engine.data_pipe import build_data_pipe
+from src.data_engine.tokenizer import fetch_tokenizer
 from src.training.training import training_loop
 from src.data_engine.gaussian_elimination import gaussian_elimination
 from src.data_engine.repr import repr_record
@@ -44,11 +46,27 @@ def gen_total_data(num_examples: int, save_file: str):
         save_file (str, optional): file to save the data to.
         num_examples (int, optional): number of examples.
     """
-    examples = gen_total_examples(num_examples, 2, 10)
+    examples = gen_total_examples(num_examples, 2, 5)
     # train tokenizer
     with open(save_file, "w") as f:
         for example in examples:
             f.write(example)
+
+
+def gen_total_data_pipe_builder(tokenizer, file, batch_size) -> Callable[[], IterableWrapper]:
+    """Returns a data pipe builder for the 2 variable data.
+
+    Args:
+        tokenizer: Tokenizer
+        file (str): file to build the data pipe from
+        batch_size (int): batch size
+
+    Returns:
+        Callable[[[], IterableWrapper]]: data pipe builder
+    """
+    def data_pipe_builder() -> IterableWrapper:
+        return build_data_pipe(tokenizer, file, batch_size)
+    return data_pipe_builder
 
 
 def total_loop():
@@ -59,14 +77,15 @@ def total_loop():
     train_data_file: str = "data/total/train_equations.txt"
     test_data_file: str = "data/total/test_equations.txt"
     model_save_file: str = "models/total/gauss.pt"
+    # fetch tokenizer
+    tokenizer = fetch_tokenizer("tokenizer/total.json")
     # generate data
     num_examples = 10000
     gen_total_data(num_examples=num_examples, save_file=train_data_file)
-    gen_total_data(num_examples=num_examples // 10, save_file=test_data_file)
+    gen_total_data(num_examples=num_examples // 100, save_file=test_data_file)
     # build data pipe
-    data_pipe_builder = build_data_pipe
-    # fetch tokenizer
-    tokenizer = fetch_tokenizer("tokenizer/total.json")
+    train_data_pipe_builder = gen_total_data_pipe_builder(tokenizer, train_data_file, batch_size=64)
+    test_data_pipe_builder = gen_total_data_pipe_builder(tokenizer, test_data_file, batch_size=10)
     # create model
     model = GaussNet(
         embed_dim=64,
@@ -87,14 +106,14 @@ def total_loop():
 
     # train
     training_loop(
-        data_pipe_builder=data_pipe_builder,
+        train_data_pipe_builder=train_data_pipe_builder,
+        test_data_pipe_builder=test_data_pipe_builder,
         model=model,
         optimizer=optimizer,
         num_epochs=num_epochs,
         monitor_freq=monitor_freq,
         evaluation_freq=evaluation_freq,
         save_file=model_save_file,
-        evaluation_file=test_data_file,
         plotting_freq=plotting_freq,
         plot_file=plot_file,
     )

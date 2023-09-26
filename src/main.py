@@ -2,13 +2,14 @@
 
 import torch
 
-from src.training.one_var_int_loop import gen_1var_int_data
+from src.training.one_var_int_loop import one_var_int_loop
 
 
 if __name__ == "__main__":
     # set seed
     torch.manual_seed(0)
-    gen_1var_int_data(10000, "data/one_var/int/train_equations.txt")
+    # run
+    one_var_int_loop()
 
 
 # Experiment 1: easy, lr: 0.001, batch_size: 64, num_examples: 100, num_epochs: 100

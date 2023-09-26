@@ -1,12 +1,13 @@
 ## TODO
 
 # code
-- [ ] remove default arguments  
-- [ ] restructure repo (tokenizer, data, training, model, evaluation)
+- [x] remove default arguments  
+- [x] restructure repo (tokenizer, data, training, model, evaluation)
+- [x] refactor evaluation loop
 
 # data
 - [x] gaussian elimination
-- [ ] 1 variable linear equations
+- [x] 1 variable linear equations
 - [x] tokenizer
 - [x] dataset with (x, y) pairs
 - [x] embedding
@@ -18,21 +19,21 @@
 - [x] positional embedding
 - [x] evaluation loop
 - [x] enhance training (adaptive model checkpoints, visualization, add more function arguments)
-- [ ] optimize training loop
-- [ ] add learning rate scheduler
+- [x] train and test accuracy (scatter plots)
 - [ ] add accelerator support
-- [ ] connect to paperspace.com
+- [ ] connect to paperspace.com or colab.research.google.com
 
 # debugging
 - [x] use random seed
 - [x] test data pipeline
 - [x] test model initialization: E[L] = -ln(1 / k)
-- [ ] one variable training
-- [ ] overfit on small dataset (no dropout)
-- [ ] epoch-loss graphs 
+- [x] one variable training
+- [x] overfit on small dataset 
+- [x] epoch-loss graphs 
 - [ ] incrementally build up complexity
 
 # model optimization
-- [ ] regularization 
+- [x] regularization (dropout) 
 - [x] normalization
 - [ ] hyperparameter optimization
+- [ ] scan self-supervised learning cookbook
