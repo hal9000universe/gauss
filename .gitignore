@@ -1,6 +1,9 @@
-\venv
-\__pycache__
+/venv
+/models
+/data
+/tokenizer
+/.pytest_cache
+/.vscode
+/__pycache__
 .DS_Store
 /.idea
-/.vscode
-/.pytest_cache

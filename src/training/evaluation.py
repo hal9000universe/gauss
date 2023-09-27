@@ -3,14 +3,14 @@
 import torch
 from torch.utils.data import DataLoader
 
-from src.gauss_net.transformer import GaussNet
+from src.models.transformer import MathFormer
 
 
-def evaluate(model: GaussNet, data_loader: DataLoader) -> float:
+def evaluate(model: MathFormer, data_loader: DataLoader) -> float:
     """Evaluate the model on the data.
 
     Args:
-        model (GaussNet): model
+        model (MathFormer): model
         data_loader (DataLoader): data loader
 
     Returns:
@@ -27,11 +27,11 @@ def evaluate(model: GaussNet, data_loader: DataLoader) -> float:
     return num_correct / num_points
 
 
-def evaluation(model: GaussNet, load_file: str, data_loader: DataLoader):
+def evaluation(model: MathFormer, load_file: str, data_loader: DataLoader):
     """Evaluate the model.
 
     Args:
-        model (GaussNet): model
+        model (MathFormer): model
         load_file (str): file to load the model from
         data_loader (DataLoader): data loader
     """

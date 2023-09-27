@@ -1,12 +1,12 @@
 #  Copyright (c) 2023. Benjamin Schoofs
 
-from typing import Optional, List, Callable
+from typing import Optional, List
 
 import torch
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
 
-from src.gauss_net.transformer import GaussNet
+from src.models.transformer import MathFormer
 from src.training.evaluation import evaluate
 
 import matplotlib.pyplot as plt
@@ -65,16 +65,17 @@ def comp_trail_avg_loss(loss_list: List[float]) -> float:
         float: trailing average loss
     """
     if len(loss_list) > 50:
-        return sum(loss_list[50:]) / len(loss_list[50:])
+        return sum(loss_list[-50:]) / len(loss_list[-50:])
     else:
         return sum(loss_list) / len(loss_list)
 
 
 def training_loop(
         accelerator: Accelerator,
-        train_data_loader_builder: Callable[[], DataLoader],
-        test_data_loader_builder: Callable[[], DataLoader],
-        model: GaussNet,
+        train_data_loader: DataLoader,
+        test_data_loader: DataLoader,
+        train_eval_data_loader: DataLoader,
+        model: MathFormer,
         optimizer: torch.optim.Optimizer,
         num_epochs: int = 1000,
         monitor_freq: int = 100,
@@ -82,14 +83,16 @@ def training_loop(
         save_file: Optional[str] = None,
         plotting_freq: int = 1000,
         plot_file: Optional[str] = None,
+        save_freq: int = 10000,
 ):
     """Training loop for the GaussNet.
 
     Args:
         accelerator (Accelerator): accelerator
-        train_data_loader_builder (DataLoader): train data loader
-        test_data_loader_builder (DataLoader): test data loader
-        model (GaussNet): model
+        train_data_loader (DataLoader): train data loader
+        test_data_loader (DataLoader): test data loader
+        train_eval_data_loader (DataLoader): train evaluation data loader
+        model (MathFormer): model
         optimizer (torch.optim.Optimizer): optimizer
         num_epochs (int, optional): number of epochs. Defaults to 1000.
         monitor_freq (int, optional): frequency of monitoring. Defaults to 100.
@@ -97,6 +100,7 @@ def training_loop(
         save_file (str, optional): file to save the model to. Defaults to None.
         plotting_freq (int, optional): frequency of plotting. Defaults to 1000.
         plot_file (str, optional): file to save the plot to. Defaults to None.
+        save_freq (int, optional): frequency of saving. Defaults to 10000.
     """
     # train
     step = 0
@@ -113,8 +117,6 @@ def training_loop(
 
     # training loop
     for epoch in range(0, num_epochs):
-        # build train data loader
-        model, optimizer, train_data_loader = accelerator.prepare([model, optimizer, train_data_loader_builder()])
         # iterate over training batches
         for (x, padding_mask), y in train_data_loader:
             # reset gradients
@@ -133,8 +135,8 @@ def training_loop(
             avg_loss_list.append(avg_loss)
 
             # save minimal loss
-            if loss.item() < 0.1 * min_loss:
-                min_loss = loss.item()
+            if avg_loss < 0.1 * min_loss:
+                min_loss = avg_loss
                 print(f"Epoch: {epoch}, Step: {step}, Loss: {loss.item()}, Average Loss: {avg_loss}")
                 torch.save(model.state_dict(), save_file)
                 print(f"Model with minimal loss saved to {save_file}")
@@ -145,17 +147,9 @@ def training_loop(
 
             # evaluation
             if step % evaluation_freq == 0:
-                # build train & test data loader
-                model, optimizer, train_data_loader, test_data_loader = accelerator.prepare(
-                    [model,
-                     optimizer,
-                     train_data_loader_builder(),
-                     test_data_loader_builder(),
-                     ]
-                )
                 # evaluate
                 test_accuracy = evaluate(model, test_data_loader)
-                train_accuracy = evaluate(model, train_data_loader)
+                train_accuracy = evaluate(model, train_eval_data_loader)
                 print(f"Epoch: {epoch}, Step: {step}, Test Accuracy: {test_accuracy}, "
                       f"Training Accuracy: {train_accuracy}")
 
@@ -180,6 +174,11 @@ def training_loop(
                 # average loss plot
                 file = plot_file.replace(".png", f"-Average-Loss.png")
                 plot(loss_step_list, avg_loss_list, "Average Loss", "Step", "Average Loss", file)
+
+            # save model
+            if step % save_freq == 0:
+                torch.save(model.state_dict(), save_file)
+                print(f"Model saved to {save_file}")
 
             # increment step
             step += 1
