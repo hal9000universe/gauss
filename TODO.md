@@ -4,6 +4,7 @@
 - [x] remove default arguments  
 - [x] restructure repo (tokenizer, data, training, model, evaluation)
 - [x] refactor evaluation loop
+- [x] fix data consumption
 
 # data
 - [x] gaussian elimination
@@ -20,7 +21,7 @@
 - [x] evaluation loop
 - [x] enhance training (adaptive model checkpoints, visualization, add more function arguments)
 - [x] train and test accuracy (scatter plots)
-- [ ] add accelerator support
+- [x] add accelerator support
 - [ ] connect to paperspace.com or colab.research.google.com
 
 # debugging
@@ -36,4 +37,4 @@
 - [x] regularization (dropout) 
 - [x] normalization
 - [ ] hyperparameter optimization
-- [ ] scan self-supervised learning cookbook
+- [x] scan self-supervised learning cookbook

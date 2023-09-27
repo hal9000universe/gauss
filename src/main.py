@@ -12,7 +12,6 @@ def main():
     torch.manual_seed(0)
     # run
     notebook_launcher(one_var_int_loop, num_processes=1)
-    # run()
 
 
 if __name__ == "__main__":

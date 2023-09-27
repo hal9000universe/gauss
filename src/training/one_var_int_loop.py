@@ -6,7 +6,7 @@ from typing import List
 import torch
 
 from src.data_engine.one_var_solve import solve, Equation
-from src.processing.tokenizer import fetch_tokenizer
+from src.processing.tokenizer import fetch_tokenizer, build_one_var_tokenizer
 from src.training.training import training_loop
 from src.models.transformer import MathFormer
 from src.processing.data_loader import generate_data_loader
@@ -59,6 +59,8 @@ def one_var_int_loop():
         os.makedirs("plots/one_var/int")
     if not os.path.exists("data/one_var/int"):
         os.makedirs("data/one_var/int")
+    if not os.path.exists("tokenizer"):
+        os.makedirs("tokenizer")
 
     # set up
     train_data_file: str = "data/one_var/int/train_equations.txt"
@@ -72,7 +74,12 @@ def one_var_int_loop():
     gen_1var_int_data(num_examples, train_data_file)
     gen_1var_int_data(num_test_examples, test_data_file)
 
-    # fetch tokenizer
+    # build tokenizer
+    load_model = True
+    if not os.path.exists("tokenizer/one_var_tokenizer.json"):
+        build_one_var_tokenizer()
+        load_model = False  # do not load model if tokenizer is built
+    # load tokenizer
     tokenizer = fetch_tokenizer("tokenizer/one_var_tokenizer.json")
 
     # build data loaders
@@ -89,8 +96,7 @@ def one_var_int_loop():
         tokenizer=tokenizer,
     )
     # load model
-    load = True
-    if os.path.exists("models/one_var/int/gauss.pt") and load:
+    if os.path.exists("models/one_var/int/gauss.pt") and load_model:
         model.load_state_dict(torch.load("models/one_var/int/gauss.pt"))
     # create optimizer
     lr = 0.001
