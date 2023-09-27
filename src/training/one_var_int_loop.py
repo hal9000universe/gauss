@@ -1,10 +1,10 @@
 #  Copyright (c) 2023. Benjamin Schoofs
 
 import os
+from typing import List, Tuple, Callable
 
 import torch
-from typing import List, Callable
-from torchdata.datapipes.iter import IterableWrapper
+from torch.utils.data import DataLoader
 from tokenizers import Tokenizer
 
 from src.data_engine.one_var_solve import solve, Equation
@@ -12,6 +12,8 @@ from src.data_engine.data_pipe import build_data_pipe
 from src.data_engine.tokenizer import fetch_tokenizer
 from src.training.training import training_loop
 from src.gauss_net.transformer import GaussNet
+
+from accelerate import Accelerator
 
 
 def gen_1var_int_examples(n: int) -> List[str]:
@@ -47,8 +49,21 @@ def gen_1var_int_data(num_examples: int, save_file: str):
             f.write(example)
 
 
-def gen_1var_int_data_pipe_builder(tokenizer: Tokenizer, file: str, batch_size: int) -> Callable[[], IterableWrapper]:
-    """Returns a data pipe builder for the 2 variable data.
+def collate_fn(batch: List[Tuple[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]]
+               ) -> Tuple[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
+    """Collate function for the 2 variable data. ((x, padding_mask), y)
+
+    Args:
+        batch (List[Tuple[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]]): batch with a single example
+
+    Returns:
+        torch.Tensor: collated data
+    """
+    return batch[0]
+
+
+def gen_1var_int_data_loader_builder(tokenizer: Tokenizer, file: str, batch_size: int) -> Callable[[], DataLoader]:
+    """Returns a data loader for the 2 variable data.
 
     Args:
         tokenizer: Tokenizer
@@ -56,11 +71,14 @@ def gen_1var_int_data_pipe_builder(tokenizer: Tokenizer, file: str, batch_size: 
         batch_size (int): batch size
 
     Returns:
-        Callable[[[], IterableWrapper]]: data pipe builder
+        DataLoader: data_loader
     """
-    def data_pipe_builder() -> IterableWrapper:
-        return build_data_pipe(tokenizer, file, batch_size)
-    return data_pipe_builder
+    def build_1var_int_data_loader() -> DataLoader:
+        data_pipe = build_data_pipe(tokenizer, file, batch_size)
+        data_loader = DataLoader(data_pipe, collate_fn=collate_fn, shuffle=True)
+        return data_loader
+
+    return build_1var_int_data_loader
 
 
 def one_var_int_loop():
@@ -78,9 +96,9 @@ def one_var_int_loop():
     gen_1var_int_data(num_examples // 100, test_data_file)
     # fetch tokenizer
     tokenizer = fetch_tokenizer("tokenizer/one_var_tokenizer.json")
-    # build data pipes
-    train_data_pipe_builder = gen_1var_int_data_pipe_builder(tokenizer, train_data_file, batch_size)
-    test_data_pipe_builder = gen_1var_int_data_pipe_builder(tokenizer, test_data_file, batch_size)
+    # build data loaders
+    train_data_loader_builder = gen_1var_int_data_loader_builder(tokenizer, train_data_file, batch_size)
+    test_data_loader_builder = gen_1var_int_data_loader_builder(tokenizer, test_data_file, batch_size)
     # build model
     model = GaussNet(
         embed_dim=64,
@@ -103,10 +121,17 @@ def one_var_int_loop():
     plotting_freq = 2000
     plot_file = f"plots/one_var/int/{num_epochs}-{num_examples}-{lr}.png"
 
+    # accelerator
+    accelerator = Accelerator()
+    model, optimizer = accelerator.prepare(
+        [model, optimizer]
+    )
+
     # train model
     training_loop(
-        train_data_pipe_builder=train_data_pipe_builder,
-        test_data_pipe_builder=test_data_pipe_builder,
+        accelerator=accelerator,
+        train_data_loader_builder=train_data_loader_builder,
+        test_data_loader_builder=test_data_loader_builder,
         model=model,
         optimizer=optimizer,
         num_epochs=num_epochs,

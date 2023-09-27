@@ -106,8 +106,8 @@ def total_loop():
 
     # train
     training_loop(
-        train_data_pipe_builder=train_data_pipe_builder,
-        test_data_pipe_builder=test_data_pipe_builder,
+        train_data_loader_builder=train_data_pipe_builder,
+        test_data_loader_builder=test_data_pipe_builder,
         model=model,
         optimizer=optimizer,
         num_epochs=num_epochs,

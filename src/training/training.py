@@ -1,9 +1,10 @@
 #  Copyright (c) 2023. Benjamin Schoofs
 
-from typing import Callable, Optional, List
+from typing import Optional, List, Callable
 
 import torch
-from torchdata.datapipes.iter import IterableWrapper
+from torch.utils.data import DataLoader
+from accelerate import Accelerator
 
 from src.gauss_net.transformer import GaussNet
 from src.training.evaluation import evaluate
@@ -70,8 +71,9 @@ def comp_trail_avg_loss(loss_list: List[float]) -> float:
 
 
 def training_loop(
-        train_data_pipe_builder: Callable[[], IterableWrapper],
-        test_data_pipe_builder: Callable[[], IterableWrapper],
+        accelerator: Accelerator,
+        train_data_loader_builder: Callable[[], DataLoader],
+        test_data_loader_builder: Callable[[], DataLoader],
         model: GaussNet,
         optimizer: torch.optim.Optimizer,
         num_epochs: int = 1000,
@@ -84,8 +86,9 @@ def training_loop(
     """Training loop for the GaussNet.
 
     Args:
-        train_data_pipe_builder (Callable[[], IterableWrapper]): data pipe
-        test_data_pipe_builder (Callable[[], IterableWrapper]): test data pipe
+        accelerator (Accelerator): accelerator
+        train_data_loader_builder (DataLoader): train data loader
+        test_data_loader_builder (DataLoader): test data loader
         model (GaussNet): model
         optimizer (torch.optim.Optimizer): optimizer
         num_epochs (int, optional): number of epochs. Defaults to 1000.
@@ -108,15 +111,18 @@ def training_loop(
     loss_step_list = []
     accuracy_step_list = []
 
+    # training loop
     for epoch in range(0, num_epochs):
-        data_pipe = train_data_pipe_builder()
-        for (x, padding_mask), y in data_pipe:
+        # build train data loader
+        model, optimizer, train_data_loader = accelerator.prepare([model, optimizer, train_data_loader_builder()])
+        # iterate over training batches
+        for (x, padding_mask), y in train_data_loader:
             # reset gradients
             optimizer.zero_grad()
             # calculate loss
             loss = model(x, targets=y, src_key_padding_mask=padding_mask)
             # backpropagate
-            loss.backward()
+            accelerator.backward(loss)
             # update weights
             optimizer.step()
 
@@ -137,10 +143,19 @@ def training_loop(
             if step % monitor_freq == 0:
                 print(f"Epoch: {epoch}, Step: {step}, Loss: {loss.item()}, Average Loss: {avg_loss}")
 
-            # evaluate
+            # evaluation
             if step % evaluation_freq == 0:
-                test_accuracy = evaluate(model, test_data_pipe_builder)
-                train_accuracy = evaluate(model, train_data_pipe_builder)
+                # build train & test data loader
+                model, optimizer, train_data_loader, test_data_loader = accelerator.prepare(
+                    [model,
+                     optimizer,
+                     train_data_loader_builder(),
+                     test_data_loader_builder(),
+                     ]
+                )
+                # evaluate
+                test_accuracy = evaluate(model, test_data_loader)
+                train_accuracy = evaluate(model, train_data_loader)
                 print(f"Epoch: {epoch}, Step: {step}, Test Accuracy: {test_accuracy}, "
                       f"Training Accuracy: {train_accuracy}")
 
@@ -150,7 +165,7 @@ def training_loop(
                 accuracy_step_list.append(step)
 
                 # accuracy plot
-                file = plot_file.replace(".png", f"-Accuracy-{step}.png")
+                file = plot_file.replace(".png", f"-Accuracy.png")
                 scatter_accuracy(accuracy_step_list, test_accuracy_list, train_accuracy_list,
                                  "Accuracy", "Step", "Accuracy", file)
 
@@ -163,7 +178,7 @@ def training_loop(
             # plot
             if step % plotting_freq == 0:
                 # average loss plot
-                file = plot_file.replace(".png", f"-Average-Loss-{step}.png")
+                file = plot_file.replace(".png", f"-Average-Loss.png")
                 plot(loss_step_list, avg_loss_list, "Average Loss", "Step", "Average Loss", file)
 
             # increment step
@@ -175,8 +190,8 @@ def training_loop(
     print(f"Model saved to {save_file}")
 
     # loss plot
-    loss_plot_file = plot_file.replace(".png", f"-Loss.png")
-    plot(loss_step_list, loss_list, "Loss", "Step", "Loss", loss_plot_file)
+    loss_plot_file = plot_file.replace(".png", f"-Averager-Loss.png")
+    plot(loss_step_list, avg_loss_list, "Average Loss", "Step", "Loss", loss_plot_file)
 
     # test_accuracy plot
     accuracy_plot_file = plot_file.replace(".png", f"-Accuracy.png")
