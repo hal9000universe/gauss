@@ -85,6 +85,13 @@ def one_var_int_loop():
     """One variable integer loop for the GaussNet.
 
     Training on 10000 examples of Gaussian elimination with a large GaussNet."""
+    # make directories
+    if not os.path.exists("models/one_var/int"):
+        os.makedirs("models/one_var/int")
+    if not os.path.exists("plots/one_var/int"):
+        os.makedirs("plots/one_var/int")
+    if not os.path.exists("data/one_var/int"):
+        os.makedirs("data/one_var/int")
     # set up
     train_data_file: str = "data/one_var/int/train_equations.txt"
     test_data_file: str = "data/one_var/int/test_equations.txt"
