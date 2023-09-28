@@ -4,6 +4,6 @@
 /tokenizer
 /.pytest_cache
 /.vscode
-/__pycache__
+**/__pycache__
 .DS_Store
 /.idea
