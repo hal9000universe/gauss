@@ -1,6 +1,6 @@
 # gauss
 
-teaching ml-models gaussian elimination.
+teaching ml-models how to solve equations.
 
 ## goals
 - understand natural-language processing (e.g. tokenization, embeddings)
