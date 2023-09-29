@@ -63,9 +63,9 @@ def one_var_int_loop():
     # set up
     train_data_file: str = "data/one_var/int/train_equations.txt"
     test_data_file: str = "data/one_var/int/test_equations.txt"
-    num_examples: int = 10000
-    num_test_examples: int = 50
-    batch_size: int = 512
+    num_examples: int = 2000
+    num_test_examples: int = 20
+    batch_size: int = 128
     num_epochs: int = 1000
 
     # generate data
@@ -82,10 +82,10 @@ def one_var_int_loop():
 
     # build model
     model = MathFormer(
-        embed_dim=256,
-        dim_feedforward=2048,
+        embed_dim=128,
+        dim_feedforward=512,
         num_heads=8,
-        num_layers=12,
+        num_layers=8,
         tokenizer=tokenizer,
     )
     # load model
@@ -100,7 +100,7 @@ def one_var_int_loop():
 
     # define training loop
     monitor_freq = 100
-    evaluation_freq = 1000
+    evaluation_freq = 10000
     save_file = f"models/one_var/int/gauss.pt"
     plotting_freq = 2000
     plot_file = f"plots/one_var/int/{num_epochs}-{num_examples}-{lr}.png"

@@ -133,3 +133,101 @@ class MathFormer(nn.Module):
             return loss
         else:
             return logits
+
+    def generate_action(self, x: torch.Tensor) -> torch.Tensor:
+        """Generate an action.
+
+        Args:
+            x (torch.Tensor): input tensor, shape (1, seq_len)
+
+        Returns:
+            torch.Tensor: action
+        """
+
+        action = []
+        done = False
+        op_todo = True
+        no_x = False
+        num_numbers = 0
+
+        op_ids = [self._tokenizer.token_to_id("/add("),
+                  self._tokenizer.token_to_id("/sub("),
+                  self._tokenizer.token_to_id("/mul("),
+                  self._tokenizer.token_to_id("/div("),
+                  self._tokenizer.token_to_id("/add(-"),
+                  self._tokenizer.token_to_id("/sub(-"),
+                  self._tokenizer.token_to_id("/mul(-"),
+                  self._tokenizer.token_to_id("/div(-")]
+
+        no_x_ops_ids = [self._tokenizer.token_to_id("/mul("),
+                        self._tokenizer.token_to_id("/div("),
+                        self._tokenizer.token_to_id("/mul(-"),
+                        self._tokenizer.token_to_id("/div(-")]
+
+        number_ids = [self._tokenizer.token_to_id("0"),
+                      self._tokenizer.token_to_id("1"),
+                      self._tokenizer.token_to_id("2"),
+                      self._tokenizer.token_to_id("3"),
+                      self._tokenizer.token_to_id("4"),
+                      self._tokenizer.token_to_id("5"),
+                      self._tokenizer.token_to_id("6"),
+                      self._tokenizer.token_to_id("7"),
+                      self._tokenizer.token_to_id("8"),
+                      self._tokenizer.token_to_id("9")]
+
+        token_probs = torch.nn.functional.softmax(self(x).view(-1), dim=0)
+        max_id = torch.argmax(token_probs)
+
+        while op_todo:
+            for op_id in op_ids:
+                if max_id == op_id:
+                    action.append(max_id)
+                    x = torch.cat([x.view(-1, 1), torch.tensor([[max_id]])]).view(1, -1)
+                    op_todo = False
+                    break
+            token_probs[max_id] = 0.
+            max_id = torch.argmax(token_probs)
+
+        operation_id = action[0]
+        for no_x_op_id in no_x_ops_ids:
+            if operation_id == no_x_op_id:
+                no_x = True
+                break
+
+        need_number = True
+        eval_next = True
+        while not done:
+
+            if eval_next:
+                token_probs = torch.nn.functional.softmax(self(x).view(-1), dim=0)
+                max_id = torch.argmax(token_probs)
+
+            if num_numbers >= 3:
+                action.append(self._tokenizer.token_to_id(")"))
+                break
+
+            for number_id in number_ids:
+                if max_id == number_id:
+                    action.append(max_id)
+                    x = torch.cat([x.view(-1, 1), torch.tensor([[max_id]])]).view(1, -1)
+                    num_numbers += 1
+                    need_number = False
+                    eval_next = True
+                    break
+            if need_number:
+                token_probs[max_id] = 0.
+                max_id = torch.argmax(token_probs)
+                eval_next = False
+                continue
+            if max_id == self._tokenizer.token_to_id(")"):
+                action.append(max_id)
+                break
+            elif max_id == self._tokenizer.token_to_id("x)"):
+                if no_x:
+                    action.append(self._tokenizer.token_to_id(")"))
+                    break
+                else:
+                    action.append(max_id)
+                    break
+
+        return torch.tensor(action)

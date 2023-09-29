@@ -132,6 +132,14 @@ class Equation:
         return Equation(self._tensor[0, 0].item(), self._tensor[0, 1].item(),
                         self._tensor[1, 0].item(), self._tensor[1, 1].item())
 
+    def is_solved(self) -> bool:
+        """Returns whether the equation is solved.
+
+        Returns:
+            bool: whether the equation is solved
+        """
+        return abs(self._tensor[0, 1].item() - 0.) < 1e-10 and abs(self._tensor[1, 0].item() - 0.) < 1e-10
+
     def __repr__(self) -> str:
         """Returns a string representation of the equation.
 
@@ -141,7 +149,8 @@ class Equation:
         representation = f" {self._tensor[0, 0].item()}x + {self._tensor[0, 1].item()} = " \
                          f"{self._tensor[1, 0].item()}x + {self._tensor[1, 1].item()}"
         # replace
-        representation = representation.replace(".0", "")
+        representation = representation.replace(".0 ", " ")
+        representation = representation.replace(".0x", "x")
         representation = representation.replace(" 1x", " x")
         representation = representation.replace(" -0x +", " ")
         representation = representation.replace(" 0x +", " ")
