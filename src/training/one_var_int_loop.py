@@ -6,7 +6,7 @@ from typing import List
 import torch
 
 from src.data_engine.one_var_solve import solve, Equation
-from src.processing.tokenizer import fetch_tokenizer, build_one_var_tokenizer
+from src.processing.tokenizer import fetch_tokenizer
 from src.training.training import training_loop
 from src.models.transformer import MathFormer
 from src.processing.data_loader import generate_data_loader
@@ -59,26 +59,19 @@ def one_var_int_loop():
         os.makedirs("plots/one_var/int")
     if not os.path.exists("data/one_var/int"):
         os.makedirs("data/one_var/int")
-    if not os.path.exists("tokenizer"):
-        os.makedirs("tokenizer")
 
     # set up
     train_data_file: str = "data/one_var/int/train_equations.txt"
     test_data_file: str = "data/one_var/int/test_equations.txt"
     num_examples: int = 10000
     num_test_examples: int = 50
-    batch_size: int = 64
+    batch_size: int = 512
     num_epochs: int = 1000
 
     # generate data
     gen_1var_int_data(num_examples, train_data_file)
     gen_1var_int_data(num_test_examples, test_data_file)
 
-    # build tokenizer
-    load_model = True
-    if not os.path.exists("tokenizer/one_var_tokenizer.json"):
-        build_one_var_tokenizer()
-        load_model = False  # do not load model if tokenizer is built
     # load tokenizer
     tokenizer = fetch_tokenizer("tokenizer/one_var_tokenizer.json")
 
@@ -92,12 +85,15 @@ def one_var_int_loop():
         embed_dim=256,
         dim_feedforward=2048,
         num_heads=8,
-        num_layers=20,
+        num_layers=12,
         tokenizer=tokenizer,
     )
     # load model
-    if os.path.exists("models/one_var/int/gauss.pt") and load_model:
-        model.load_state_dict(torch.load("models/one_var/int/gauss.pt"))
+    if os.path.exists("models/one_var/int/gauss.pt"):
+        try:
+            model.load_state_dict(torch.load("models/one_var/int/gauss.pt"))
+        except RuntimeError:
+            print("Could not load model. Starting from scratch.")
     # create optimizer
     lr = 0.001
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)

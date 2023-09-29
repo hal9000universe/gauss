@@ -31,7 +31,7 @@ class EquationDataset(IterDataPipe):
             # tokenize
             system_tokens = self.tokenizer.encode(system_operation[0]).ids
             operation_tokens = self.tokenizer.encode(system_operation[1]).ids
-            for idx in range(0, len(operation_tokens)):
+            for idx in range(1, len(operation_tokens)):
                 x = system_tokens + operation_tokens[:idx]
                 y = operation_tokens[idx]
                 yield x, y

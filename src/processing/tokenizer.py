@@ -195,6 +195,7 @@ def build_one_var_tokenizer():
         "9": 27,
         ".": 28,
         " ": 29,
+        "[]": 30,
     }
     training_string: str = "10x + 10 = 9.0x + 13?/sub(10)" \
                            "10x = 9.0x + 3.0?/sub(9x)" \

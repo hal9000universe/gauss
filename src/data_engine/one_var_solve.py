@@ -143,8 +143,8 @@ class Equation:
         # replace
         representation = representation.replace(".0", "")
         representation = representation.replace(" 1x", " x")
-        representation = representation.replace(" 0x ", " ")
-        representation = representation.replace(" -0x", "")
+        representation = representation.replace(" -0x +", " ")
+        representation = representation.replace(" 0x +", " ")
         representation = representation.replace(" -0", "")
         representation = representation.replace(" + 0", "")
         representation = representation.replace("= +", "= ")
@@ -236,7 +236,7 @@ class End(Transformation):
         super().__init__("/end")
 
     def __repr__(self):
-        return f"{self._name}"
+        return f"{self._name}\n"
 
 
 class EquationTransformationPair(NamedTuple):
