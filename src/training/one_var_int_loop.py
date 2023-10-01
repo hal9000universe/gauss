@@ -11,8 +11,6 @@ from src.training.training import training_loop
 from src.models.transformer import MathFormer
 from src.processing.data_loader import generate_data_loader
 
-from accelerate import Accelerator
-
 
 def gen_1var_int_examples(n: int) -> List[str]:
     """Generates 1 variable equations.
@@ -47,6 +45,22 @@ def gen_1var_int_data(num_examples: int, save_file: str):
             f.write(example)
 
 
+def choose_device() -> torch.device:
+    """Chooses the device to use.
+
+    Returns:
+        torch.device: device to use
+    """
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+    print(f"Using device: {device}")
+    return device
+
+
 def one_var_int_loop():
     """One variable integer loop for the GaussNet.
 
@@ -63,10 +77,11 @@ def one_var_int_loop():
     # set up
     train_data_file: str = "data/one_var/int/train_equations.txt"
     test_data_file: str = "data/one_var/int/test_equations.txt"
-    num_examples: int = 2000
-    num_test_examples: int = 20
+    num_examples: int = 10000
+    num_test_examples: int = 5
     batch_size: int = 128
     num_epochs: int = 1000
+    num_workers: int = 0
 
     # generate data
     gen_1var_int_data(num_examples, train_data_file)
@@ -76,45 +91,52 @@ def one_var_int_loop():
     tokenizer = fetch_tokenizer("tokenizer/one_var_tokenizer.json")
 
     # build data loaders
-    train_data_loader = generate_data_loader(train_data_file, tokenizer, batch_size)
-    test_data_loader = generate_data_loader(test_data_file, tokenizer, batch_size)
-    train_eval_data_loader = generate_data_loader(train_data_file, tokenizer, batch_size)
+    train_data_loader = generate_data_loader(train_data_file, tokenizer, batch_size, num_workers)
+    test_data_loader = generate_data_loader(test_data_file, tokenizer, batch_size, num_workers)
+    train_eval_data_loader = generate_data_loader(train_data_file, tokenizer, batch_size, num_workers)
 
+    # define save files
+    model_save_file = f"models/one_var/int/gauss.pt"
+    opt_save_file = f"models/one_var/int/gauss_opt.pt"
+
+    # set up device
+    device = choose_device()
     # build model
     model = MathFormer(
         embed_dim=128,
-        dim_feedforward=512,
+        dim_feedforward=1024,
         num_heads=8,
-        num_layers=8,
+        num_layers=10,
         tokenizer=tokenizer,
-    )
+    ).to(device)
     # load model
-    if os.path.exists("models/one_var/int/gauss.pt"):
+    if os.path.exists(model_save_file):
         try:
-            model.load_state_dict(torch.load("models/one_var/int/gauss.pt"))
+            model.load_state_dict(torch.load(model_save_file))
+            print("Loaded model.")
         except RuntimeError:
             print("Could not load model. Starting from scratch.")
     # create optimizer
-    lr = 0.001
+    lr = 0.0001
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    # load optimizer
+    if os.path.exists(opt_save_file):
+        try:
+            optimizer.load_state_dict(torch.load(opt_save_file))
+            print("Loaded optimizer.")
+        except RuntimeError:
+            print("Could not load optimizer. Starting from scratch.")
 
     # define training loop
     monitor_freq = 100
     evaluation_freq = 10000
-    save_file = f"models/one_var/int/gauss.pt"
     plotting_freq = 2000
     plot_file = f"plots/one_var/int/{num_epochs}-{num_examples}-{lr}.png"
     save_freq = 10000
 
-    # accelerator
-    accelerator = Accelerator()
-    model, optimizer, train_data_loader, test_data_loader = accelerator.prepare(
-        [model, optimizer, train_data_loader, test_data_loader]
-    )
-
     # train model
     training_loop(
-        accelerator=accelerator,
+        device=device,
         train_data_loader=train_data_loader,
         test_data_loader=test_data_loader,
         train_eval_data_loader=train_eval_data_loader,
@@ -123,8 +145,13 @@ def one_var_int_loop():
         num_epochs=num_epochs,
         monitor_freq=monitor_freq,
         evaluation_freq=evaluation_freq,
-        save_file=save_file,
+        model_save_file=model_save_file,
+        opt_save_file=opt_save_file,
         plotting_freq=plotting_freq,
         plot_file=plot_file,
         save_freq=save_freq,
     )
+
+
+# try: double lr, double data
+# try: use more layers

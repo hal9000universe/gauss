@@ -83,13 +83,14 @@ def generate_collate_fn(padding_value: int) -> Callable:
     return collate_fn
 
 
-def generate_data_loader(file: str, tokenizer: Tokenizer, batch_size: int) -> DataLoader:
+def generate_data_loader(file: str, tokenizer: Tokenizer, batch_size: int, num_workers: int) -> DataLoader:
     """Generates the data loader.
 
     Args:
         file (str): file to build the data pipe from
         tokenizer (Tokenizer): tokenizer
         batch_size (int): batch size
+        num_workers (int): number of workers
 
     Returns:
         DataLoader: data_loader"""
@@ -98,5 +99,6 @@ def generate_data_loader(file: str, tokenizer: Tokenizer, batch_size: int) -> Da
         dataset,
         batch_size=batch_size,
         collate_fn=generate_collate_fn(tokenizer.token_to_id("[PAD]")),
+        num_workers=num_workers,
     )
     return dataloader

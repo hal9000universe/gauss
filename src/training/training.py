@@ -4,7 +4,6 @@ from typing import Optional, List
 
 import torch
 from torch.utils.data import DataLoader
-from accelerate import Accelerator
 
 from src.models.transformer import MathFormer
 from src.training.evaluation import evaluate
@@ -71,7 +70,7 @@ def comp_trail_avg_loss(loss_list: List[float]) -> float:
 
 
 def training_loop(
-        accelerator: Accelerator,
+        device: torch.device,
         train_data_loader: DataLoader,
         test_data_loader: DataLoader,
         train_eval_data_loader: DataLoader,
@@ -80,7 +79,8 @@ def training_loop(
         num_epochs: int = 1000,
         monitor_freq: int = 100,
         evaluation_freq: int = 1000,
-        save_file: Optional[str] = None,
+        model_save_file: Optional[str] = None,
+        opt_save_file: Optional[str] = None,
         plotting_freq: int = 1000,
         plot_file: Optional[str] = None,
         save_freq: int = 10000,
@@ -88,7 +88,7 @@ def training_loop(
     """Training loop for the GaussNet.
 
     Args:
-        accelerator (Accelerator): accelerator
+        device (torch.device): device
         train_data_loader (DataLoader): train data loader
         test_data_loader (DataLoader): test data loader
         train_eval_data_loader (DataLoader): train evaluation data loader
@@ -97,7 +97,8 @@ def training_loop(
         num_epochs (int, optional): number of epochs. Defaults to 1000.
         monitor_freq (int, optional): frequency of monitoring. Defaults to 100.
         evaluation_freq (int, optional): frequency of evaluation. Defaults to 1000.
-        save_file (str, optional): file to save the model to. Defaults to None.
+        model_save_file (str, optional): file to save the model to. Defaults to None.
+        opt_save_file (str, optional): file to save the optimizer to. Defaults to None.
         plotting_freq (int, optional): frequency of plotting. Defaults to 1000.
         plot_file (str, optional): file to save the plot to. Defaults to None.
         save_freq (int, optional): frequency of saving. Defaults to 10000.
@@ -119,12 +120,16 @@ def training_loop(
     for epoch in range(0, num_epochs):
         # iterate over training batches
         for (x, padding_mask), y in train_data_loader:
+            # move to device
+            x = x.to(device)
+            y = y.to(device)
+            padding_mask = padding_mask.to(device)
             # reset gradients
             optimizer.zero_grad()
             # calculate loss
             loss = model(x, targets=y, src_key_padding_mask=padding_mask)
             # backpropagate
-            accelerator.backward(loss)
+            loss.backward()
             # update weights
             optimizer.step()
 
@@ -138,8 +143,9 @@ def training_loop(
             if avg_loss < 0.1 * min_loss:
                 min_loss = avg_loss
                 print(f"Epoch: {epoch}, Step: {step}, Loss: {loss.item()}, Average Loss: {avg_loss}")
-                torch.save(model.state_dict(), save_file)
-                print(f"Model with minimal loss saved to {save_file}")
+                torch.save(model.state_dict(), model_save_file)
+                torch.save(optimizer.state_dict(), opt_save_file)
+                print(f"Model with minimal loss saved to {model_save_file}")
 
             # monitor
             if step % monitor_freq == 0:
@@ -148,8 +154,8 @@ def training_loop(
             # evaluation
             if step % evaluation_freq == 0:
                 # evaluate
-                test_accuracy = evaluate(model, test_data_loader)
-                train_accuracy = evaluate(model, train_eval_data_loader)
+                test_accuracy = evaluate(device, model, test_data_loader)
+                train_accuracy = evaluate(device, model, train_eval_data_loader)
                 print(f"Epoch: {epoch}, Step: {step}, Test Accuracy: {test_accuracy}, "
                       f"Training Accuracy: {train_accuracy}")
 
@@ -165,8 +171,9 @@ def training_loop(
 
                 # save model
                 if test_accuracy > max_accuracy:
-                    torch.save(model.state_dict(), save_file)
-                    print(f"Model with maximal test_accuracy saved to {save_file}")
+                    torch.save(model.state_dict(), model_save_file)
+                    torch.save(optimizer.state_dict(), opt_save_file)
+                    print(f"Model with maximal test_accuracy saved to {model_save_file}")
                     max_accuracy = test_accuracy
 
             # plot
@@ -177,16 +184,18 @@ def training_loop(
 
             # save model
             if step % save_freq == 0:
-                torch.save(model.state_dict(), save_file)
-                print(f"Model saved to {save_file}")
+                torch.save(model.state_dict(), model_save_file)
+                torch.save(optimizer.state_dict(), opt_save_file)
+                print(f"Model saved to {model_save_file}")
 
             # increment step
             step += 1
         print(f"Epoch {epoch} finished.")
 
     # save model
-    torch.save(model.state_dict(), save_file)
-    print(f"Model saved to {save_file}")
+    torch.save(model.state_dict(), model_save_file)
+    torch.save(optimizer.state_dict(), opt_save_file)
+    print(f"Model saved to {model_save_file}")
 
     # loss plot
     loss_plot_file = plot_file.replace(".png", f"-Averager-Loss.png")
