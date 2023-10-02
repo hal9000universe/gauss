@@ -77,8 +77,8 @@ def one_var_int_loop():
     # set up
     train_data_file: str = "data/one_var/int/train_equations.txt"
     test_data_file: str = "data/one_var/int/test_equations.txt"
-    num_examples: int = 10000
-    num_test_examples: int = 5
+    num_examples: int = 6000
+    num_test_examples: int = 10
     batch_size: int = 128
     num_epochs: int = 1000
     num_workers: int = 0
@@ -96,8 +96,8 @@ def one_var_int_loop():
     train_eval_data_loader = generate_data_loader(train_data_file, tokenizer, batch_size, num_workers)
 
     # define save files
-    model_save_file = f"models/one_var/int/gauss.pt"
-    opt_save_file = f"models/one_var/int/gauss_opt.pt"
+    model_save_file = f"models/one_var/int/giga-gauss-2.pt"
+    opt_save_file = f"models/one_var/int/giga-gauss-opt-2.pt"
 
     # set up device
     device = choose_device()
@@ -117,7 +117,7 @@ def one_var_int_loop():
         except RuntimeError:
             print("Could not load model. Starting from scratch.")
     # create optimizer
-    lr = 0.0001
+    lr = 0.00015
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # load optimizer
     if os.path.exists(opt_save_file):

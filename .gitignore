@@ -1,6 +1,7 @@
 /venv
 /models
 /data
+/plots
 /.pytest_cache
 /.vscode
 **/__pycache__
