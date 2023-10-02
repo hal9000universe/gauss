@@ -6,7 +6,7 @@ import torch
 from tokenizers import Tokenizer
 
 from src.data_engine.one_var_solve import Equation
-from src.processing.tokenizer import format_decoding
+from src.models.transformer import MathFormer
 
 
 class Env:
@@ -166,29 +166,34 @@ class Env:
             torch.Tensor: The reward for the action
         """
         self._apply_action(action)
-        next_obs = self._tokenizer.encode(repr(self._state)).ids
+        next_obs = torch.tensor(self._tokenizer.encode(repr(self._state)).ids)
         reward = self._reward()
         done = self._is_done()
         return next_obs, reward, done
 
+    def run_episode(self, model: MathFormer) -> float:
+        state = self.reset()
+        done = False
+        total_reward = 0
+        while not done:
+            action = model.generate_action(state.view(1, -1))
+            state, reward, done = self.step(action)
+            total_reward += reward
+        return total_reward
+
 
 if __name__ == '__main__':
     env_tokenizer = Tokenizer.from_file("tokenizer/one_var_tokenizer.json")
-
     env = Env(env_tokenizer)
-
-    from src.models.transformer import MathFormer
-
-    model = MathFormer(64, 128, 4, 2, env_tokenizer)
-
-    obs = env.reset()
-
-    action = model.generate_action(obs.view(1, -1))
-
-    print(format_decoding(env_tokenizer.decode(action.tolist())), action)
-
-    print(env.state())
-
-    env.step(action)
-
-    print(env.state())
+    network = MathFormer(
+        embed_dim=128,
+        dim_feedforward=1024,
+        num_heads=8,
+        num_layers=10,
+        tokenizer=env_tokenizer,
+    )
+    network.load_state_dict(torch.load("models/one_var/int/giga-gauss-2.pt"))
+    network.eval()
+    for _ in range(10):
+        total_rew = env.run_episode(network)
+        print(total_rew)

@@ -117,7 +117,7 @@ def one_var_int_loop():
         except RuntimeError:
             print("Could not load model. Starting from scratch.")
     # create optimizer
-    lr = 0.00015
+    lr = 0.0001
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # load optimizer
     if os.path.exists(opt_save_file):
@@ -151,7 +151,3 @@ def one_var_int_loop():
         plot_file=plot_file,
         save_freq=save_freq,
     )
-
-
-# try: double lr, double data
-# try: use more layers
