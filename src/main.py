@@ -6,9 +6,6 @@ from src.training.one_var_int_loop import one_var_int_loop
 
 
 def main():
-    # set seed
-    torch.manual_seed(0)
-    # run
     one_var_int_loop()
 
 
