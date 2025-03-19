@@ -153,6 +153,18 @@ def training_loop(
 
             # evaluation
             if step % evaluation_freq == 0:
+<<<<<<< Updated upstream
+=======
+                # build train & test data loader
+                train_data_loader = train_data_loader_builder()
+                test_data_loader = test_data_loader_builder()
+                model, optimizer, train_data_loader, test_data_loader = accelerator.prepare(
+                    [model,
+                     optimizer,
+                     train_data_loader,
+                     test_data_loader]
+                )
+>>>>>>> Stashed changes
                 # evaluate
                 test_accuracy = evaluate(device, model, test_data_loader)
                 train_accuracy = evaluate(device, model, train_eval_data_loader)

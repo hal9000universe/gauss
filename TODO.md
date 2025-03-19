@@ -4,7 +4,11 @@
 - [x] remove default arguments  
 - [x] restructure repo (tokenizer, data, training, model, evaluation)
 - [x] refactor evaluation loop
+<<<<<<< Updated upstream
 - [x] fix data consumption
+=======
+- [ ] fix accelerator consumption issue
+>>>>>>> Stashed changes
 
 # data
 - [x] gaussian elimination
